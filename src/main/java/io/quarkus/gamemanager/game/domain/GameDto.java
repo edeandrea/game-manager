@@ -1,0 +1,22 @@
+package io.quarkus.gamemanager.game.domain;
+
+import java.time.Duration;
+import java.time.Instant;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+
+public record GameDto(
+    Long id,
+
+    @Valid
+    @NotNull(message = "Player is required")
+    PlayerDto player,
+
+    @NotNull(message = "Event id is required")
+    Long eventId,
+    Instant gameDate,
+
+    @NotNull(message = "Time to complete is required")
+    Duration timeToComplete
+) { }

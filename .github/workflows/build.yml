@@ -1,0 +1,45 @@
+
+name: Simple build and test
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**/*.md'
+      - '.github/dependabot.yml'
+      - '.github/workflows/build.yml'
+      - '.github/workflows/dependabot-automerge.yml'
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - '**/*.md'
+      - '.github/dependabot.yml'
+      - '.github/workflows/build.yml'
+      - '.github/workflows/dependabot-automerge.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: "workflow = ${{ github.workflow }}, ref = ${{ github.event.ref }}, pr = ${{ github.event.pull_request.id }}"
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  jvm-build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          java-version: 25
+          distribution: temurin
+          cache: maven
+
+      - name: build-test
+        run: ./mvnw -B clean verify -Dquarkus.http.host=0.0.0.0

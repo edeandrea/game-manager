@@ -1,0 +1,44 @@
+quarkus:
+  application:
+    name: gamemanager
+  http:
+    test-port: 0
+    cors:
+      enabled: true
+      origins: "*"
+  dev-ui:
+    cors:
+      enabled: true
+  tls:
+    trust-all: true
+  hibernate-orm:
+    physical-naming-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+  rest:
+    jackson:
+      optimization:
+        enable-reflection-free-serialization: true
+  jackson:
+    serialization-inclusion: non-empty
+  smallrye-openapi:
+    info-title: Game Manager API
+    info-description: API for managing games and events
+    info-version: 1.0
+    info-contact-name: Eric Deandrea
+    info-contact-url: https://github.com/edeandrea
+  swagger-ui:
+    always-include: true
+
+'%dev':
+  quarkus:
+    datasource:
+      dev-ui:
+        allow-sql: true
+
+'%dev,test':
+  quarkus:
+    hibernate-orm:
+      log:
+        bind-parameters: true
+        sql: true
+        format-sql: true
+        highlight-sql: true
