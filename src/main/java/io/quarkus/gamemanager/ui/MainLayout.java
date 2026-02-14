@@ -5,7 +5,9 @@ import java.util.Optional;
 
 import io.quarkus.gamemanager.event.domain.EventDto;
 import io.quarkus.gamemanager.event.service.EventService;
+import io.quarkus.gamemanager.game.service.GameService;
 import io.quarkus.gamemanager.ui.components.AddEventDialog;
+import io.quarkus.gamemanager.ui.views.GamesForEventView;
 import io.quarkus.logging.Log;
 
 import com.vaadin.flow.component.Component;
@@ -33,13 +35,14 @@ import com.vaadin.flow.theme.lumo.Lumo;
 public class MainLayout extends AppLayout {
   private final Button switchThemeButton = new Button(VaadinIcon.SUN_O.create());
   private final EventService eventService;
+  private final GamesForEventView gamesForEventView;
   private final Button deleteEventButton = new Button(VaadinIcon.TRASH.create());
   private final Select<EventDto> eventSelector = new Select<>("Events");
   private ListDataProvider<EventDto> eventDataProvider;
   private boolean isDefaultDarkTheme = false;
   private String currentTheme = Lumo.LIGHT;
 
-  public MainLayout(EventService eventService) {
+  public MainLayout(EventService eventService, GameService gameService) {
     super();
     this.eventService = eventService;
 
@@ -63,6 +66,9 @@ public class MainLayout extends AppLayout {
     spacer.getStyle().setFlexGrow("1");
 
     addToNavbar(titleLayout, spacer, createEventNavItem());
+
+    this.gamesForEventView = new GamesForEventView(this.eventService, gameService);
+    setContent(this.gamesForEventView);
   }
 
   private Component createEventNavItem() {
@@ -140,7 +146,10 @@ public class MainLayout extends AppLayout {
   private void eventSelected(EventDto newEvent) {
     Optional.ofNullable(newEvent)
         .ifPresentOrElse(
-            _ -> this.deleteEventButton.setEnabled(true),
+            event -> {
+              this.deleteEventButton.setEnabled(true);
+              this.gamesForEventView.setEvent(event);
+            },
             () -> this.deleteEventButton.setEnabled(false)
         );
   }
