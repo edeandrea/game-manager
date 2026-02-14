@@ -34,14 +34,14 @@ quarkus:
 
 '%dev':
   quarkus:
+    flyway:
+      clean-at-start: true
     datasource:
       dev-ui:
         allow-sql: true
 
 '%dev,test':
   quarkus:
-    flyway:
-      clean-at-start: true
     hibernate-orm:
       log:
         bind-parameters: true
