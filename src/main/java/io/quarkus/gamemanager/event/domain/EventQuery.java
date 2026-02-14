@@ -16,6 +16,10 @@ public record EventQuery(
     String name
 ) {
 
+  public static EventQuery empty() {
+    return new EventQuery(null, null, null);
+  }
+
   public Optional<Instant> getStart() {
     return Optional.ofNullable(start);
   }

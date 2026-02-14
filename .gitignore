@@ -56,3 +56,4 @@ tsconfig.json
 package-lock.json
 package.json
 webpack.generated.js
+**/generated/**

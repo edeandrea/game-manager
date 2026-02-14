@@ -1,6 +1,7 @@
 package io.quarkus.gamemanager.event.domain;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.validation.constraints.NotEmpty;
@@ -22,6 +23,10 @@ public record EventDto(
     List<GameDto> games
 ) {
   public EventDto(Long id, Instant eventDate, String name, String description) {
-    this(id, eventDate, name, description, List.of());
+    this(id, eventDate, name, description, new ArrayList<>());
+  }
+
+  public EventDto(Instant eventDate, String name, String description) {
+    this(null, eventDate, name, description);
   }
 }

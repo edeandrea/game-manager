@@ -20,11 +20,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import io.quarkus.gamemanager.event.domain.EventDto;
 import io.quarkus.gamemanager.event.domain.EventQuery;
-import io.quarkus.gamemanager.event.mapping.EventMapper;
-import io.quarkus.gamemanager.event.repository.EventRepository;
+import io.quarkus.gamemanager.event.service.EventService;
 import io.quarkus.gamemanager.game.domain.GameDto;
-import io.quarkus.gamemanager.game.mapping.GameMapper;
-import io.quarkus.gamemanager.game.repository.GameRepository;
 
 import io.smallrye.common.annotation.RunOnVirtualThread;
 
@@ -33,33 +30,23 @@ import io.smallrye.common.annotation.RunOnVirtualThread;
 @Tag(name = "Events")
 @RunOnVirtualThread
 public class EventResource {
-  private final EventRepository eventRepository;
-  private final GameRepository gameRepository;
-  private final EventMapper eventMapper;
-  private final GameMapper gameMapper;
+  private final EventService eventService;
 
-  public EventResource(EventRepository eventRepository, GameRepository gameRepository, EventMapper eventMapper, GameMapper gameMapper) {
-    this.eventRepository = eventRepository;
-    this.gameRepository = gameRepository;
-    this.eventMapper = eventMapper;
-    this.gameMapper = gameMapper;
+  public EventResource(EventService eventService) {
+    this.eventService = eventService;
   }
 
   @GET
   @Transactional
   public List<EventDto> getAllEvents(@BeanParam EventQuery eventQuery) {
-    return this.eventRepository.getEvents(eventQuery)
-        .stream()
-        .map(this.eventMapper::toDto)
-        .toList();
+    return this.eventService.getAllEvents(eventQuery);
   }
 
   @Path("/{eventId}")
   @GET
   @Transactional
   public Response getEvent(@PathParam("eventId") @Valid @NotNull Long eventId) {
-    return this.eventRepository.findByIdOptional(eventId)
-        .map(this.eventMapper::toDto)
+    return this.eventService.getEvent(eventId)
         .map(Response::ok)
         .orElseGet(() -> Response.status(Response.Status.NOT_FOUND))
         .build();
@@ -69,32 +56,20 @@ public class EventResource {
   @GET
   @Transactional
   public List<GameDto> getLeaderboard(@PathParam("eventId") @Valid @NotNull Long eventId) {
-    return this.gameRepository.getLeaderboard(eventId)
-        .stream()
-        .map(this.gameMapper::toDto)
-        .toList();
+    return this.eventService.getLeaderboard(eventId);
   }
 
   @Path("/{eventId}")
   @DELETE
   @Transactional
   public void deleteEvent(@PathParam("eventId") @Valid @NotNull Long eventId) {
-    this.eventRepository.deleteById(eventId);
+    this.eventService.deleteEvent(eventId);
   }
 
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
   @Transactional
   public EventDto addEvent(@Valid @NotNull EventDto eventDto) {
-    var event = (eventDto.id() == null) ?
-        eventDto :
-        new EventDto(null, eventDto.eventDate(), eventDto.name(), eventDto.description());
-
-    // There shouldn't be any games in the event DTO when creating an event
-    event.games().clear();
-
-    var eventEntity = this.eventMapper.toEntity(event);
-    this.eventRepository.persist(eventEntity);
-    return this.eventMapper.toDto(eventEntity);
+    return this.eventService.addEvent(eventDto);
   }
 }

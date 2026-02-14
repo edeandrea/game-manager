@@ -9,6 +9,10 @@ quarkus:
   dev-ui:
     cors:
       enabled: true
+  flyway:
+    migrate-at-start: true
+    baseline-version: 1.0.0
+    baseline-description: Initial version
   tls:
     trust-all: true
   hibernate-orm:
@@ -36,6 +40,8 @@ quarkus:
 
 '%dev,test':
   quarkus:
+    flyway:
+      clean-at-start: true
     hibernate-orm:
       log:
         bind-parameters: true
