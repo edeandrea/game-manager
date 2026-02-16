@@ -1,5 +1,6 @@
 package io.quarkus.gamemanager.ui.views;
 
+import java.time.Duration;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
@@ -12,11 +13,17 @@ import java.util.stream.Stream;
 import io.quarkus.gamemanager.event.domain.EventDto;
 import io.quarkus.gamemanager.event.service.EventService;
 import io.quarkus.gamemanager.game.domain.GameDto;
+import io.quarkus.gamemanager.game.domain.PlayerDto;
 import io.quarkus.gamemanager.game.service.GameService;
+import io.quarkus.gamemanager.ui.components.DurationFormatter;
+import io.quarkus.gamemanager.ui.components.GameUnderwayDialog;
+import io.quarkus.gamemanager.ui.components.NewGameCountdownDialog;
+import io.quarkus.gamemanager.ui.components.NewGameDialog;
 import io.quarkus.logging.Log;
 import io.quarkus.panache.common.Sort;
 import io.quarkus.panache.common.Sort.Direction;
 
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
@@ -24,7 +31,10 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.SelectionMode;
 import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
@@ -39,35 +49,52 @@ public final class GamesForEventView extends VerticalLayout {
   private final EventService eventService;
   private final GameService gameService;
   private final Grid<GameDto> grid;
+  private final Button refreshGamesButton = new Button(VaadinIcon.REFRESH.create());
+  private final Button addGameButton = new Button(VaadinIcon.PLUS.create());
   private final Button removeGamesButton = new Button(VaadinIcon.TRASH.create());
+  private final H4 gridLabel = new H4("Leaderboard");
   private EventDto currentEvent = null;
 
   public GamesForEventView(EventService eventService, GameService gameService) {
     this.eventService = eventService;
     this.gameService = gameService;
 
-    var refreshGamesButton = new Button(VaadinIcon.REFRESH.create(), e -> refreshGrid());
-    var addGameButton = new Button(VaadinIcon.PLUS.create(), e -> handleNewGame());
+    this.refreshGamesButton.addClickListener(_ -> refreshGrid());
+    this.removeGamesButton.setEnabled(false);
+    this.addGameButton.addClickListener(_ -> handleNewGame());
+    this.addGameButton.setEnabled(false);
     addGameButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    this.removeGamesButton.addClickListener(e -> handleRemoveSelectedGames());
+    this.removeGamesButton.addClickListener(_ -> handleRemoveSelectedGames());
     this.removeGamesButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
     this.removeGamesButton.setEnabled(false);
 
-    var topBar = new HorizontalLayout(refreshGamesButton, addGameButton, this.removeGamesButton);
+    var topBar = new HorizontalLayout(this.refreshGamesButton, this.addGameButton, this.removeGamesButton);
     topBar.setWidthFull();
     add(topBar);
 
     this.grid = createGrid();
     this.grid.setDataProvider(DataProvider.fromCallbacks(new GameFetchCallback(), new GameSizeCallback()));
     this.grid.addSelectionListener(this::handleGridRowsSelected);
-    add(this.grid);
+
+    var gridLayout = new VerticalLayout();
+    gridLayout.addClassName("bordered-section");
+    gridLayout.setPadding(false);
+    gridLayout.setSpacing(false);
+
+    this.gridLabel.getStyle().setMargin("0");
+    this.gridLabel.getStyle().setPadding("var(--lumo-space-s)");
+    this.gridLabel.getStyle().setBorderBottom("1px solid var(--lumo-contrast-10pct)");
+    gridLayout.add(this.gridLabel, this.grid);
+
+    add(gridLayout);
 
     setPadding(true);
     setSizeFull();
   }
 
   private void handleGridRowsSelected(SelectionEvent<Grid<GameDto>, GameDto> event) {
-    this.removeGamesButton.setEnabled(!event.getAllSelectedItems().isEmpty());
+    var eventSelected = !event.getAllSelectedItems().isEmpty();
+    this.removeGamesButton.setEnabled(eventSelected);
     this.grid.setEmptyStateText(this.currentEvent.games().isEmpty() ? "No games found for event '%s'".formatted(this.currentEvent.name()) : "");
   }
 
@@ -97,21 +124,80 @@ public final class GamesForEventView extends VerticalLayout {
   }
 
   private void handleNewGame() {
+    var newGameDialog = new NewGameDialog();
+    newGameDialog.addOpenedChangeListener(event -> {
+      if (!event.isOpened()) {
+        newGameDialog.getPlayer()
+            .ifPresent(this::setUpGame);
+      }
+    });
 
+    newGameDialog.open();
+  }
+
+  private void newGameStarted(PlayerDto player) {
+    var newGameDialog = new NewGameCountdownDialog(player, this.gameService);
+    newGameDialog.addOpenedChangeListener(event -> {
+      if (!event.isOpened()) {
+        startGame(player);
+      }
+    });
+
+    newGameDialog.open();
+  }
+
+  private void setUpGame(PlayerDto player) {
+    Log.infof("Setting up game for player: %s", player);
+    var notification = Notification.show("Setting up game...Please wait...", 0, Position.MIDDLE, true);
+    UI ui = UI.getCurrentOrThrow();
+
+    this.gameService.setUpNewGame()
+        .subscribe()
+        .with(_ -> ui.access(() -> {
+          notification.close();
+          newGameStarted(player);
+        }));
+  }
+
+  private void startGame(PlayerDto player) {
+    var gameUnderwayDialog = new GameUnderwayDialog(player, this.gameService);
+    gameUnderwayDialog.addOpenedChangeListener(event -> {
+      if (!event.isOpened()) {
+        gameUnderwayDialog.getElapsedTime()
+            .ifPresentOrElse(
+                elapsedTime -> endGame(player, elapsedTime),
+                () -> endGame(player, Duration.ZERO));
+      }
+    });
+
+    gameUnderwayDialog.open();
+  }
+
+  private void endGame(PlayerDto player, Duration elapsedTime) {
+    if (elapsedTime.isZero()) {
+      Notification.show("Game was cancelled for player: %s".formatted(player.firstName()));
+    }
+    else {
+      Notification.show("Game ended for player: %s\nDuration: %s".formatted(player.firstName(), DurationFormatter.format(elapsedTime)));
+    }
   }
 
   private void refreshGrid() {
     Optional.ofNullable(this.currentEvent)
         .ifPresentOrElse(
             e -> {
-              var leaderboard = this.eventService.getLeaderboard(e.id());
-              Log.infof("Leaderboard for event '%s': %s", e.name(), leaderboard);
+              addGameButton.setEnabled(true);
+              refreshGamesButton.setEnabled(true);
+              gridLabel.setText("Leaderboard for '%s'".formatted(e.name()));
 
               if (e.games().isEmpty()) {
                 this.grid.setEmptyStateText("No games found for event '%s'".formatted(e.name()));
               }
             },
             () -> {
+              addGameButton.setEnabled(false);
+              refreshGamesButton.setEnabled(false);
+              gridLabel.setText("Leaderboard");
               this.grid.setEmptyStateText("No event selected.");
             }
         );
@@ -159,7 +245,7 @@ public final class GamesForEventView extends VerticalLayout {
         .setFlexGrow(1)
         .setSortProperty("gameDate");
 
-    var timeToCompleteColumn = grid.addColumn(game -> "%d minutes %d seconds".formatted(game.timeToComplete().toMinutesPart(), game.timeToComplete().toSecondsPart()))
+    var timeToCompleteColumn = grid.addColumn(game -> DurationFormatter.format(game.timeToComplete()))
         .setHeader("Time to Complete")
         .setResizable(true)
         .setSortable(true)

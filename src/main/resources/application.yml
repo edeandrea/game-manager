@@ -31,6 +31,9 @@ quarkus:
     info-contact-url: https://github.com/edeandrea
   swagger-ui:
     always-include: true
+  jgit:
+    devservices:
+      enabled: false
 
 '%dev':
   quarkus:

@@ -1,5 +1,6 @@
 package io.quarkus.gamemanager.game.service;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 
@@ -16,6 +17,10 @@ import io.quarkus.gamemanager.game.mapping.GameMapper;
 import io.quarkus.gamemanager.game.repository.GameRepository;
 import io.quarkus.logging.Log;
 import io.quarkus.panache.common.Sort;
+
+import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.infrastructure.Infrastructure;
 
 @ApplicationScoped
 public class GameService {
@@ -71,6 +76,35 @@ public class GameService {
   public void deleteGame(GameDto gameDto) {
     Log.infof("Deleting game: %s", gameDto);
     this.gameRepository.deleteById(gameDto.id());
+  }
+
+  public Multi<Integer> countDown(Integer startingFrom, Duration every) {
+    return Multi.createFrom()
+        .range(0, startingFrom + 1)
+        .map(i -> startingFrom - i)
+        .call(() ->
+            Uni.createFrom().nullItem()
+                .onItem()
+                .delayIt()
+                .by(every)
+        )
+        .runSubscriptionOn(Infrastructure.getDefaultExecutor())
+        .emitOn(Infrastructure.getDefaultExecutor());
+  }
+
+  public Multi<Long> timeGame() {
+    return Multi.createFrom()
+        .ticks()
+        .startingAfter(Duration.ofSeconds(1))
+        .every(Duration.ofSeconds(1))
+        .runSubscriptionOn(Infrastructure.getDefaultExecutor())
+        .emitOn(Infrastructure.getDefaultExecutor());
+  }
+
+  public Uni<Void> setUpNewGame() {
+    return Uni.createFrom().voidItem()
+        .call(() -> Uni.createFrom().nullItem()
+            .onItem().delayIt().by(Duration.ofSeconds(3)));
   }
 
   private GameDto saveGame(Event event, GameDto gameDto) {
