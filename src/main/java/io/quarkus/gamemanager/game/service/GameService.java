@@ -1,5 +1,6 @@
 package io.quarkus.gamemanager.game.service;
 
+import java.util.Collection;
 import java.util.List;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -14,6 +15,7 @@ import io.quarkus.gamemanager.game.domain.GameDto;
 import io.quarkus.gamemanager.game.mapping.GameMapper;
 import io.quarkus.gamemanager.game.repository.GameRepository;
 import io.quarkus.logging.Log;
+import io.quarkus.panache.common.Sort;
 
 @ApplicationScoped
 public class GameService {
@@ -29,7 +31,17 @@ public class GameService {
 
   @Transactional
   public List<GameDto> getGames(@Valid @NotNull Long eventId) {
+    Log.infof("Getting games for event with id: %s", eventId);
     return this.gameRepository.getGamesForEvent(eventId)
+        .stream()
+        .map(this.gameMapper::toDto)
+        .toList();
+  }
+
+  @Transactional
+  public List<GameDto> getGames(@Valid @NotNull Long eventId, Sort sort) {
+    Log.infof("Getting games for event with id: %s, sorted by: %s", eventId, sort);
+    return this.gameRepository.getGamesForEvent(eventId, sort)
         .stream()
         .map(this.gameMapper::toDto)
         .toList();
@@ -43,6 +55,22 @@ public class GameService {
     return this.eventRepository.findByIdOptional(eventId)
         .map(event -> saveGame(event, gameDto))
         .orElseThrow(() -> new NotAcceptableException("Game is not associated with any event, or event %d can not be found".formatted(eventId)));
+  }
+
+  public void deleteGames(Collection<GameDto> games) {
+    games.forEach(this::deleteGame);
+  }
+
+  @Transactional
+  public long countGamesForEvent(Long eventId) {
+    Log.infof("Counting games for event with id: %s", eventId);
+    return this.gameRepository.countGamesForEvent(eventId);
+  }
+
+  @Transactional
+  public void deleteGame(GameDto gameDto) {
+    Log.infof("Deleting game: %s", gameDto);
+    this.gameRepository.deleteById(gameDto.id());
   }
 
   private GameDto saveGame(Event event, GameDto gameDto) {

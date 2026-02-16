@@ -68,6 +68,14 @@ public class EventService {
   }
 
   @Transactional
+  public void saveEvent(EventDto eventDto) {
+    Log.infof("Saving event: %s", eventDto);
+    var eventToSave = this.eventMapper.toEntity(eventDto);
+    var updatedEvent = this.eventRepository.findById(eventToSave.getId()).from(eventToSave);
+    this.eventRepository.persist(updatedEvent);
+  }
+
+  @Transactional
   public EventDto addEvent(@Valid @NotNull EventDto eventDto) {
     Log.infof("Adding event: %s", eventDto);
     var event = (eventDto.id() == null) ?

@@ -40,6 +40,13 @@ public class Event {
   @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Game> games = new ArrayList<>();
 
+  public Event from(Event event) {
+    return withEventDate(event.getEventDate())
+        .withName(event.getName())
+        .withDescription(event.getDescription())
+        .withGames(event.getGames());
+  }
+
   public Long getId() {
     return id;
   }
