@@ -1,11 +1,13 @@
 package io.quarkus.gamemanager.ui.views;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -46,17 +48,33 @@ import com.vaadin.flow.data.renderer.LocalDateRenderer;
 import com.vaadin.flow.data.selection.SelectionEvent;
 
 public final class GamesForEventView extends VerticalLayout {
-  private final EventService eventService;
   private final GameService gameService;
-  private final Grid<GameDto> grid;
+  private final Grid<Game> grid;
   private final Button refreshGamesButton = new Button(VaadinIcon.REFRESH.create());
   private final Button addGameButton = new Button(VaadinIcon.PLUS.create());
   private final Button removeGamesButton = new Button(VaadinIcon.TRASH.create());
   private final H4 gridLabel = new H4("Leaderboard");
   private EventDto currentEvent = null;
 
+  private record Game(int rowNum, GameDto gameDto) {
+    public PlayerDto player() {
+      return gameDto().player();
+    }
+
+    public Duration timeToComplete() {
+      return gameDto().timeToComplete();
+    }
+
+    public Instant gameDate() {
+      return gameDto().gameDate();
+    }
+
+    public Long id() {
+      return gameDto().id();
+    }
+  }
+
   public GamesForEventView(EventService eventService, GameService gameService) {
-    this.eventService = eventService;
     this.gameService = gameService;
 
     this.refreshGamesButton.addClickListener(_ -> refreshGrid());
@@ -92,7 +110,7 @@ public final class GamesForEventView extends VerticalLayout {
     setSizeFull();
   }
 
-  private void handleGridRowsSelected(SelectionEvent<Grid<GameDto>, GameDto> event) {
+  private void handleGridRowsSelected(SelectionEvent<Grid<Game>, Game> event) {
     var eventSelected = !event.getAllSelectedItems().isEmpty();
     this.removeGamesButton.setEnabled(eventSelected);
     this.grid.setEmptyStateText(this.currentEvent.games().isEmpty() ? "No games found for event '%s'".formatted(this.currentEvent.name()) : "");
@@ -107,11 +125,11 @@ public final class GamesForEventView extends VerticalLayout {
           var selectedGames = this.grid.getSelectedItems();
           var selectedGameIds = selectedGames
               .stream()
-              .map(GameDto::id)
+              .map(Game::id)
               .collect(Collectors.toSet());
 
           this.currentEvent.games().removeIf(game -> selectedGameIds.contains(game.id()));
-          this.gameService.deleteGames(selectedGames);
+          this.gameService.deleteGames(selectedGames.stream().map(Game::gameDto).toList());
           this.grid.getDataProvider().refreshAll();
           this.grid.deselectAll();
         },
@@ -211,12 +229,18 @@ public final class GamesForEventView extends VerticalLayout {
     refreshGrid();
   }
 
-  private Grid<GameDto> createGrid() {
-    var grid = new Grid<>(GameDto.class, false);
+  private Grid<Game> createGrid() {
+    var grid = new Grid<>(Game.class, false);
     grid.setSelectionMode(SelectionMode.MULTI);
     grid.setColumnReorderingAllowed(true);
     grid.addThemeVariants(GridVariant.LUMO_ROW_STRIPES);
     grid.setEmptyStateText("No event selected.");
+
+    grid.addColumn(Game::rowNum)
+        .setResizable(false)
+        .setSortable(false)
+        .setAutoWidth(true)
+        .setFlexGrow(0);
 
     grid.addColumn(game -> game.player().firstName())
         .setHeader("First Name")
@@ -258,22 +282,23 @@ public final class GamesForEventView extends VerticalLayout {
     return grid;
   }
 
-  private class GameFetchCallback implements FetchCallback<GameDto, Void> {
+  private class GameFetchCallback implements FetchCallback<Game, Void> {
     @Override
-    public Stream<GameDto> fetch(Query<GameDto, Void> query) {
+    public Stream<Game> fetch(Query<Game, Void> query) {
       // Satisfy Vaadin's contract even though we aren't supporting filtering or pagination
       query.getLimit();
       query.getOffset();
 
-      var stream = Optional.ofNullable(currentEvent)
+      var rowIndex = new AtomicInteger(1);
+
+      return Optional.ofNullable(currentEvent)
           .map(e -> createSort(query.getSortOrders())
               .map(sort -> gameService.getGames(e.id(), sort))
               .orElseGet(() -> gameService.getGames(e.id()))
           )
           .map(List::stream)
-          .orElseGet(Stream::empty);
-
-      return stream;
+          .orElseGet(Stream::empty)
+          .map(gameDto -> new Game(rowIndex.getAndIncrement(), gameDto));
     }
 
     private static Optional<Sort> createSort(List<QuerySortOrder> sortOrders) {
@@ -304,9 +329,9 @@ public final class GamesForEventView extends VerticalLayout {
     }
   }
 
-  private class GameSizeCallback implements CountCallback<GameDto, Void> {
+  private class GameSizeCallback implements CountCallback<Game, Void> {
     @Override
-    public int count(Query<GameDto, Void> query) {
+    public int count(Query<Game, Void> query) {
       return Optional.ofNullable(currentEvent)
           .map(e -> (int) gameService.countGamesForEvent(e.id()))
           .orElse(0);
