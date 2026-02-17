@@ -39,6 +39,7 @@ public final class GameUnderwayDialog extends Dialog {
     this.elapsedTimeLabel.getStyle().setFontWeight(FontWeight.BOLD);
     this.elapsedTimeLabel.getStyle().setTextAlign(TextAlign.CENTER);
     this.elapsedTimeLabel.getStyle().setDisplay(Display.BLOCK);
+
     add(this.elapsedTimeLabel);
 
     var cancelButton = new Button("Cancel", _ -> cancelGame());

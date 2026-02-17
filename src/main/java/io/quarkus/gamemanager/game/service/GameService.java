@@ -1,22 +1,29 @@
 package io.quarkus.gamemanager.game.service;
 
+import static org.awaitility.Awaitility.await;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.NotAcceptableException;
+import jakarta.ws.rs.ProcessingException;
+import jakarta.ws.rs.core.Response.Status;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ResetCommand.ResetType;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.TextProgressMonitor;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import io.quarkus.gamemanager.event.domain.jpa.Event;
 import io.quarkus.gamemanager.event.repository.EventRepository;
@@ -24,6 +31,7 @@ import io.quarkus.gamemanager.game.config.GameConfig;
 import io.quarkus.gamemanager.game.domain.GameDto;
 import io.quarkus.gamemanager.game.mapping.GameMapper;
 import io.quarkus.gamemanager.game.repository.GameRepository;
+import io.quarkus.gamemanager.ide.service.IntelliJService;
 import io.quarkus.logging.Log;
 import io.quarkus.panache.common.Sort;
 
@@ -33,16 +41,21 @@ import io.smallrye.mutiny.infrastructure.Infrastructure;
 
 @ApplicationScoped
 public class GameService {
+  private final GameDevUiClient gameDevUiClient;
   private final GameConfig gameConfig;
   private final GameRepository gameRepository;
   private final EventRepository eventRepository;
   private final GameMapper gameMapper;
+  private final IntelliJService intelliJService;
+  private final AtomicReference<Process> intellijProcess = new AtomicReference<>();
 
-  public GameService(GameConfig gameConfig, GameRepository gameRepository, EventRepository eventRepository, GameMapper gameMapper) {
+  public GameService(@RestClient GameDevUiClient gameDevUiClient, GameConfig gameConfig, GameRepository gameRepository, EventRepository eventRepository, GameMapper gameMapper, IntelliJService intelliJService) {
+    this.gameDevUiClient = gameDevUiClient;
     this.gameConfig = gameConfig;
     this.gameRepository = gameRepository;
     this.eventRepository = eventRepository;
     this.gameMapper = gameMapper;
+    this.intelliJService = intelliJService;
   }
 
   @Transactional
@@ -147,6 +160,8 @@ public class GameService {
 
   public Uni<Void> setUpNewGame() {
     return Uni.createFrom().voidItem()
+        .runSubscriptionOn(Infrastructure.getDefaultExecutor())
+        .emitOn(Infrastructure.getDefaultExecutor())
         .invoke(() -> {
           Log.info("Setting up new game");
           var rootCheckoutDir = this.gameConfig.rootCheckoutDir().normalize().toAbsolutePath();
@@ -164,15 +179,97 @@ public class GameService {
             else {
               Log.infof("Checkout directory [%s] doesn't exist");
               cloneRepo(checkoutDir);
-              new ProcessBuilder("open", checkoutDir.toString())
-                  .start()
-                  .waitFor();
             }
           }
           catch (Exception e) {
             throw new RuntimeException(e);
           }
-        });
+        })
+        .invoke(() -> openNewGame(this.gameConfig.checkoutDir().normalize().toAbsolutePath()));
+  }
+
+  private Process createIntellijProcess() {
+    try {
+      var process = new ProcessBuilder("intellij", this.gameConfig.checkoutDir().normalize().toAbsolutePath().toString())
+          .start();
+
+      process.onExit().thenAccept(p -> Log.infof("Intellij process %d exited with code: %d", p.pid(), p.exitValue()));
+
+      return process;
+    }
+    catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private synchronized Process getIntellijProcess() {
+    var process = Optional.ofNullable(this.intellijProcess.get())
+        .filter(Process::isAlive)
+        .orElseGet(this::createIntellijProcess);
+
+    this.intellijProcess.set(process);
+
+    return process;
+  }
+
+  private void openNewGame(Path gameDir) {
+    Log.infof("Opening new game in directory [%s]", gameDir);
+//    try {
+      var intellijProcess = getIntellijProcess();
+      this.intelliJService.executeRunConfiguration("booth-game", gameDir.toString());
+
+      Log.infof("Started intellijProcess: %s", intellijProcess.pid());
+
+      // Now wait for dev mode to start
+      await("For app to start")
+          .ignoreException(ProcessingException.class)
+          .atMost(Duration.ofMinutes(1))
+          .pollInterval(Duration.ofSeconds(5))
+          .pollDelay(Duration.ofSeconds(5))
+          .logging(log -> Log.infof("Checking to see if app is up: %s", log))
+          .until(() -> this.gameDevUiClient.health().getStatus() == Status.OK.getStatusCode());
+
+//      var intellijOutput = this.intelliJService.executeTerminalCommand(
+//          new Command(
+//              this.gameConfig.appStartupCommand(),
+//              true,
+//              false,
+//              gameDir.toString()
+//          )
+//      );
+
+//      return new GameTracker(null, intellijProcess);
+//      var appProcess = new ProcessBuilder(this.gameConfig.appStartupCommand().split(" "))
+//          .directory(gameDir.toFile())
+////          .inheritIO()
+//          .start();
+//
+//      appProcess.onExit().thenAccept(p -> Log.infof("Dev mode process %d exited with code: %d", p.pid(), p.exitValue()));
+//
+//      Log.infof("Started appProcess: %s", appProcess.pid());
+//
+//      // Now wait for dev mode to start
+//      await("For app to start")
+//          .ignoreException(ProcessingException.class)
+//          .atMost(Duration.ofMinutes(1))
+//          .pollInterval(Duration.ofSeconds(5))
+//          .pollDelay(Duration.ofSeconds(5))
+//          .logging(log -> Log.infof("Checking to see if app is up: %s", log))
+//          .until(() -> appProcess.isAlive() && this.gameDevUiClient.health().getStatus() == Status.OK.getStatusCode());
+//
+////      var externalProcess = new ProcessBuilder("open", "%s/workspace".formatted(this.gameConfig.appDevUiUrl().toString()))
+////          .start();
+//
+//      var externalProcess = new ProcessBuilder("intellij", gameDir.toString())
+//          .start();
+//
+//      externalProcess.onExit().thenAccept(p -> Log.infof("External process %d exited with code: %d", p.pid(), p.exitValue()));
+//
+//      return new GameTracker(appProcess, externalProcess);
+//    }
+//    catch (IOException e) {
+//      throw new RuntimeException(e);
+//    }
   }
 
   private GameDto saveGame(Event event, GameDto gameDto) {
