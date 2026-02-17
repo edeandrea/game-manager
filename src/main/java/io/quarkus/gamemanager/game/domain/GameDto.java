@@ -19,4 +19,8 @@ public record GameDto(
 
     @NotNull(message = "Time to complete is required")
     Duration timeToComplete
-) { }
+) {
+  public GameDto(PlayerDto player, Long eventId, Duration timeToComplete) {
+    this(null, player, eventId, Instant.now(), timeToComplete);
+  }
+}

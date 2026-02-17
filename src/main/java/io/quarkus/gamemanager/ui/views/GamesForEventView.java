@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -13,18 +14,21 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import io.quarkus.gamemanager.event.domain.EventDto;
-import io.quarkus.gamemanager.event.service.EventService;
 import io.quarkus.gamemanager.game.domain.GameDto;
 import io.quarkus.gamemanager.game.domain.PlayerDto;
 import io.quarkus.gamemanager.game.service.GameService;
+import io.quarkus.gamemanager.ui.GameBroadcaster;
 import io.quarkus.gamemanager.ui.components.DurationFormatter;
 import io.quarkus.gamemanager.ui.components.GameUnderwayDialog;
 import io.quarkus.gamemanager.ui.components.NewGameCountdownDialog;
 import io.quarkus.gamemanager.ui.components.NewGameDialog;
+import io.quarkus.gamemanager.ui.events.GameAddedEvent;
+import io.quarkus.gamemanager.ui.events.GamesDeletedEvent;
 import io.quarkus.logging.Log;
 import io.quarkus.panache.common.Sort;
 import io.quarkus.panache.common.Sort.Direction;
 
+import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -41,6 +45,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
 import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
+import com.vaadin.flow.data.provider.DataChangeEvent;
 import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.data.provider.QuerySortOrder;
@@ -49,6 +54,7 @@ import com.vaadin.flow.data.selection.SelectionEvent;
 
 public final class GamesForEventView extends VerticalLayout {
   private final GameService gameService;
+  private final GameBroadcaster gameBroadcaster;
   private final Grid<Game> grid;
   private final Button refreshGamesButton = new Button(VaadinIcon.REFRESH.create());
   private final Button addGameButton = new Button(VaadinIcon.PLUS.create());
@@ -74,14 +80,15 @@ public final class GamesForEventView extends VerticalLayout {
     }
   }
 
-  public GamesForEventView(EventService eventService, GameService gameService) {
+  public GamesForEventView(GameService gameService, GameBroadcaster gameBroadcaster) {
     this.gameService = gameService;
+    this.gameBroadcaster = gameBroadcaster;
 
     this.refreshGamesButton.addClickListener(_ -> refreshGrid());
     this.removeGamesButton.setEnabled(false);
     this.addGameButton.addClickListener(_ -> handleNewGame());
     this.addGameButton.setEnabled(false);
-    addGameButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    this.addGameButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     this.removeGamesButton.addClickListener(_ -> handleRemoveSelectedGames());
     this.removeGamesButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
     this.removeGamesButton.setEnabled(false);
@@ -93,6 +100,7 @@ public final class GamesForEventView extends VerticalLayout {
     this.grid = createGrid();
     this.grid.setDataProvider(DataProvider.fromCallbacks(new GameFetchCallback(), new GameSizeCallback()));
     this.grid.addSelectionListener(this::handleGridRowsSelected);
+    this.grid.getDataProvider().addDataProviderListener(this::gridDataChanged);
 
     var gridLayout = new VerticalLayout();
     gridLayout.addClassName("bordered-section");
@@ -110,6 +118,45 @@ public final class GamesForEventView extends VerticalLayout {
     setSizeFull();
   }
 
+  private void gridDataChanged(DataChangeEvent<Game> gameDataChangeEvent) {
+    Optional.ofNullable(this.currentEvent)
+        .ifPresent(event -> {
+          var size = gameDataChangeEvent.getSource().size(new Query<>());
+          var gameLabel = (size == 1) ? "game" : "games";
+          gridLabel.setText("Leaderboard for '%s' (%d %s)".formatted(event.name(), size, gameLabel));
+        });
+  }
+
+  @Override
+  public void onAttach(AttachEvent attachEvent) {
+    super.onAttach(attachEvent);
+    var ui = attachEvent.getUI();
+    this.gameBroadcaster.register(GameAddedEvent.class, event -> handleBroadcastGameAdded(event, ui), this);
+    this.gameBroadcaster.register(GamesDeletedEvent.class, event -> handleBroadcastGameDeleted(event, ui), this);
+  }
+
+  private void handleBroadcastGameDeleted(GamesDeletedEvent event, UI ui) {
+    if (event.source() != ui) {
+      ui.access(() -> {
+        Notification.show("Some games were deleted. Refreshing leaderboard...", 3000, Position.MIDDLE);
+        grid.getDataProvider().refreshAll();
+      });
+    }
+  }
+
+  private void handleBroadcastGameAdded(GameAddedEvent event, UI ui) {
+    if (event.source() != ui) {
+      var msg = event.isNewHighScore() ?
+          "%s %s just registered a new high score!".formatted(event.newGame().player().firstName(), event.newGame().player().lastName()) :
+          "New score added!";
+
+      ui.access(() -> {
+        Notification.show(msg, 3000, Position.MIDDLE);
+        grid.getDataProvider().refreshAll();
+      });
+    }
+  }
+
   private void handleGridRowsSelected(SelectionEvent<Grid<Game>, Game> event) {
     var eventSelected = !event.getAllSelectedItems().isEmpty();
     this.removeGamesButton.setEnabled(eventSelected);
@@ -122,16 +169,20 @@ public final class GamesForEventView extends VerticalLayout {
         "Are you sure you want to delete the selected games?",
         "Yes",
         _ -> {
-          var selectedGames = this.grid.getSelectedItems();
+          var selectedGames = this.grid.getSelectedItems()
+              .stream()
+              .map(Game::gameDto)
+              .toList();
           var selectedGameIds = selectedGames
               .stream()
-              .map(Game::id)
+              .map(GameDto::id)
               .collect(Collectors.toSet());
 
           this.currentEvent.games().removeIf(game -> selectedGameIds.contains(game.id()));
-          this.gameService.deleteGames(selectedGames.stream().map(Game::gameDto).toList());
+          this.gameService.deleteGames(selectedGames);
           this.grid.getDataProvider().refreshAll();
           this.grid.deselectAll();
+          this.gameBroadcaster.fireEvent(new GamesDeletedEvent(getUI().get(), selectedGames));
         },
         "No",
         _ -> {}
@@ -193,10 +244,28 @@ public final class GamesForEventView extends VerticalLayout {
 
   private void endGame(PlayerDto player, Duration elapsedTime) {
     if (elapsedTime.isZero()) {
-      Notification.show("Game was cancelled for player: %s".formatted(player.firstName()));
+      Notification.show("Game cancelled");
     }
     else {
-      Notification.show("Game ended for player: %s\nDuration: %s".formatted(player.firstName(), DurationFormatter.format(elapsedTime)));
+      var newGame = new GameDto(player, this.currentEvent.id(), elapsedTime);
+
+      var isNewHighScore = this.grid.getLazyDataView().getItems()
+          .sorted(Comparator.comparing(Game::timeToComplete))
+          .findFirst()
+          .filter(game -> elapsedTime.compareTo(game.timeToComplete()) <= 0)
+          .map(g -> true)
+          .orElse(false);
+
+      if (isNewHighScore) {
+        Notification.show("Great job %s! You've got the top time!".formatted(player.firstName()), 3000, Position.MIDDLE);
+      }
+      else {
+        Notification.show("Sooooo close!", 3000, Position.MIDDLE);
+      }
+
+      var savedGame = this.gameService.addGame(newGame);
+      this.grid.getDataProvider().refreshAll();
+      this.gameBroadcaster.fireEvent(new GameAddedEvent(getUI().get(), savedGame, isNewHighScore));
     }
   }
 

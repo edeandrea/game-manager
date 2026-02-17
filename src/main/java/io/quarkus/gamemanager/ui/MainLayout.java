@@ -42,7 +42,7 @@ public class MainLayout extends AppLayout {
   private boolean isDefaultDarkTheme = false;
   private String currentTheme = Lumo.LIGHT;
 
-  public MainLayout(EventService eventService, GameService gameService) {
+  public MainLayout(EventService eventService, GameBroadcaster gameBroadcaster, GameService gameService) {
     super();
     this.eventService = eventService;
 
@@ -67,7 +67,7 @@ public class MainLayout extends AppLayout {
 
     addToNavbar(titleLayout, spacer, createEventNavItem());
 
-    this.gamesForEventView = new GamesForEventView(this.eventService, gameService);
+    this.gamesForEventView = new GamesForEventView(gameService, gameBroadcaster);
     setContent(this.gamesForEventView);
   }
 
