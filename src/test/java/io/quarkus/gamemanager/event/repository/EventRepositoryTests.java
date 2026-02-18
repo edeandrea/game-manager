@@ -26,6 +26,7 @@ class EventRepositoryTests {
 
   @Test
   void deleteAllWithCascade() {
+    this.eventRepository.deleteAllWithCascade();
     assertThat(this.eventRepository.count()).isZero();
     assertThat(this.gameRepository.count()).isZero();
 

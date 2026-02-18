@@ -18,10 +18,6 @@ public class GameRepository implements PanacheRepository<Game> {
     return list("event.id", sort, eventId);
   }
 
-  public List<Game> getLeaderboard(Long eventId) {
-    return list("event.id", Sort.by("timeToComplete"), eventId);
-  }
-
   public long countGamesForEvent(Long eventId) {
     return count("event.id", eventId);
   }
