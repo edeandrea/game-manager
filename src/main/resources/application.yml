@@ -8,7 +8,7 @@ quarkus:
         scope: request-response
   langchain4j:
     openai:
-      api-key: ${OPENAI_API_KEY}
+      api-key: ${OPENAI_API_KEY:change-me}
       timeout: 15s
 #      api-key: not-needed
 #      base-url: http://localhost:11434/v1
@@ -59,7 +59,7 @@ quarkus:
       otlp:
         endpoint: https://otlp-gateway-prod-us-east-2.grafana.net/otlp
         protocol: http/protobuf
-        headers: Authorization=Basic ${GRAFANA_AUTH_TOKEN}
+        headers: Authorization=Basic ${GRAFANA_AUTH_TOKEN:change-me}
   datasource:
     metrics:
       enabled: true
