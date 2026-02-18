@@ -8,7 +8,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.Response.Status;
 
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.quarkus.gamemanager.event.domain.jpa.EventTestHelper;
@@ -23,7 +23,7 @@ class EventResourceTests {
   @Inject
   EventRepository eventRepository;
 
-  @AfterEach
+  @BeforeEach
   @Transactional
   void beforeEach() {
     this.eventRepository.deleteAllWithCascade();

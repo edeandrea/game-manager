@@ -68,8 +68,6 @@ quarkus:
 
 '%dev':
   quarkus:
-    flyway:
-      clean-at-start: true
     datasource:
       dev-ui:
         allow-sql: true
@@ -79,6 +77,8 @@ quarkus:
     compose:
       devservices:
         enabled: false
+    flyway:
+      clean-at-start: true
     hibernate-orm:
       log:
         bind-parameters: true
