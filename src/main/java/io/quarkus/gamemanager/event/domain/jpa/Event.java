@@ -1,6 +1,6 @@
 package io.quarkus.gamemanager.event.domain.jpa;
 
-import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -28,7 +28,7 @@ public class Event {
   private Long id;
 
   @NotNull(message = "Event date is required")
-  private Instant eventDate;
+  private LocalDate eventDate;
 
   @NotEmpty(message = "Name is required")
   private String name;
@@ -60,15 +60,15 @@ public class Event {
     return this;
   }
 
-  public Instant getEventDate() {
+  public LocalDate getEventDate() {
     return eventDate;
   }
 
-  public void setEventDate(Instant eventDate) {
+  public void setEventDate(LocalDate eventDate) {
     withEventDate(eventDate);
   }
 
-  public Event withEventDate(Instant eventDate) {
+  public Event withEventDate(LocalDate eventDate) {
     this.eventDate = eventDate;
     return this;
   }

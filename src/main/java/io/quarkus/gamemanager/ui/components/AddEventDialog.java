@@ -1,7 +1,6 @@
 package io.quarkus.gamemanager.ui.components;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.Optional;
 
 import jakarta.validation.constraints.NotEmpty;
@@ -147,14 +146,14 @@ public final class AddEventDialog extends Dialog {
     public static EventForm fromDto(EventDto dto) {
       var form = new EventForm();
       form.setDescription(dto.description());
-      form.setEventDate(dto.eventDate().atZone(ZoneId.systemDefault()).toLocalDate());
+      form.setEventDate(dto.eventDate());
       form.setName(dto.name());
       return form;
     }
 
     public EventDto toDto() {
       return new EventDto(
-          this.eventDate.atStartOfDay(ZoneId.systemDefault()).toInstant(),
+          this.eventDate,
           this.name,
           this.description);
     }

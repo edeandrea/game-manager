@@ -1,6 +1,6 @@
 package io.quarkus.gamemanager.event.domain;
 
-import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,7 +13,7 @@ public record EventDto(
     Long id,
 
     @NotNull(message = "Event date is required")
-    Instant eventDate,
+    LocalDate eventDate,
 
     @NotEmpty(message = "Name is required")
     String name,
@@ -22,11 +22,11 @@ public record EventDto(
     String description,
     List<GameDto> games
 ) {
-  public EventDto(Long id, Instant eventDate, String name, String description) {
+  public EventDto(Long id, LocalDate eventDate, String name, String description) {
     this(id, eventDate, name, description, new ArrayList<>());
   }
 
-  public EventDto(Instant eventDate, String name, String description) {
+  public EventDto(LocalDate eventDate, String name, String description) {
     this(null, eventDate, name, description);
   }
 }

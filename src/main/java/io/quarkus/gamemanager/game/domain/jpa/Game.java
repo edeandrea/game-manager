@@ -1,7 +1,7 @@
 package io.quarkus.gamemanager.game.domain.jpa;
 
 import java.time.Duration;
-import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Objects;
 
 import jakarta.persistence.Column;
@@ -39,7 +39,7 @@ public class Game {
 
   @CreationTimestamp(source = SourceType.DB)
 	@Column(updatable = false, nullable = false)
-	private Instant gameDate;
+	private LocalDate gameDate;
 
   @NotNull(message = "Time to complete is required")
   @Column(nullable = false)
@@ -84,15 +84,15 @@ public class Game {
     return this;
   }
 
-  public Instant getGameDate() {
+  public LocalDate getGameDate() {
     return gameDate;
   }
 
-  public void setGameDate(Instant gameDate) {
+  public void setGameDate(LocalDate gameDate) {
     withGameDate(gameDate);
   }
 
-  public Game withGameDate(Instant gameDate) {
+  public Game withGameDate(LocalDate gameDate) {
     this.gameDate = gameDate;
     return this;
   }

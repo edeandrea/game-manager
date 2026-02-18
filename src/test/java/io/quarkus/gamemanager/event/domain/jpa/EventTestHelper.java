@@ -1,6 +1,6 @@
 package io.quarkus.gamemanager.event.domain.jpa;
 
-import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
 import io.quarkus.gamemanager.game.domain.jpa.Game;
@@ -23,7 +23,7 @@ public class EventTestHelper {
     return new Event()
         .withName(fakeData.lorem().characters(10, 20))
         .withDescription(fakeData.lorem().sentence())
-        .withEventDate(Instant.now())
+        .withEventDate(LocalDate.now())
         .withGames(List.of(game1, game2));
   }
 }

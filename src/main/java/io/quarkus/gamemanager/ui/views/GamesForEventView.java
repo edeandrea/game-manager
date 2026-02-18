@@ -1,8 +1,7 @@
 package io.quarkus.gamemanager.ui.views;
 
 import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneId;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Comparator;
@@ -43,8 +42,10 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.data.provider.CallbackDataProvider.CountCallback;
 import com.vaadin.flow.data.provider.CallbackDataProvider.FetchCallback;
+import com.vaadin.flow.data.provider.ConfigurableFilterDataProvider;
 import com.vaadin.flow.data.provider.DataChangeEvent;
 import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.data.provider.Query;
@@ -53,6 +54,8 @@ import com.vaadin.flow.data.renderer.LocalDateRenderer;
 import com.vaadin.flow.data.selection.SelectionEvent;
 
 public final class GamesForEventView extends VerticalLayout {
+  private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG);
+
   private final GameService gameService;
   private final GameBroadcaster gameBroadcaster;
   private final Grid<Game> grid;
@@ -60,6 +63,7 @@ public final class GamesForEventView extends VerticalLayout {
   private final Button addGameButton = new Button(VaadinIcon.PLUS.create());
   private final Button removeGamesButton = new Button(VaadinIcon.TRASH.create());
   private final H4 gridLabel = new H4("Leaderboard");
+  private final Select<LocalDate> gameDateFilter = new Select<>("Game Dates Filter");
   private EventDto currentEvent = null;
 
   private record Game(int rowNum, GameDto gameDto) {
@@ -71,7 +75,7 @@ public final class GamesForEventView extends VerticalLayout {
       return gameDto().timeToComplete();
     }
 
-    public Instant gameDate() {
+    public LocalDate gameDate() {
       return gameDto().gameDate();
     }
 
@@ -83,7 +87,6 @@ public final class GamesForEventView extends VerticalLayout {
   public GamesForEventView(GameService gameService, GameBroadcaster gameBroadcaster) {
     this.gameService = gameService;
     this.gameBroadcaster = gameBroadcaster;
-
     this.refreshGamesButton.addClickListener(_ -> refreshGrid());
     this.removeGamesButton.setEnabled(false);
     this.addGameButton.addClickListener(_ -> handleNewGame());
@@ -93,12 +96,18 @@ public final class GamesForEventView extends VerticalLayout {
     this.removeGamesButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
     this.removeGamesButton.setEnabled(false);
 
-    var topBar = new HorizontalLayout(this.refreshGamesButton, this.addGameButton, this.removeGamesButton);
+    createGameDateFilter();
+    this.gameDateFilter.setWidth("fit-content");
+
+//    var spacer = new Div();
+//    spacer.getStyle().setFlexGrow("1");
+    var topBar = new HorizontalLayout(this.refreshGamesButton, this.addGameButton, this.removeGamesButton, this.gameDateFilter);
     topBar.setWidthFull();
+    topBar.setAlignItems(Alignment.BASELINE);
     add(topBar);
 
     this.grid = createGrid();
-    this.grid.setDataProvider(DataProvider.fromCallbacks(new GameFetchCallback(), new GameSizeCallback()));
+    this.grid.setDataProvider(DataProvider.fromFilteringCallbacks(new GameFetchCallback(), new GameSizeCallback()).withConfigurableFilter());
     this.grid.addSelectionListener(this::handleGridRowsSelected);
     this.grid.getDataProvider().addDataProviderListener(this::gridDataChanged);
 
@@ -139,7 +148,7 @@ public final class GamesForEventView extends VerticalLayout {
     if (event.source() != ui) {
       ui.access(() -> {
         Notification.show("Some games were deleted. Refreshing leaderboard...", 3000, Position.MIDDLE);
-        grid.getDataProvider().refreshAll();
+        refreshGrid();
       });
     }
   }
@@ -180,7 +189,7 @@ public final class GamesForEventView extends VerticalLayout {
 
           this.currentEvent.games().removeIf(game -> selectedGameIds.contains(game.id()));
           this.gameService.deleteGames(selectedGames);
-          this.grid.getDataProvider().refreshAll();
+          refreshGrid();
           this.grid.deselectAll();
           this.gameBroadcaster.fireEvent(new GamesDeletedEvent(getUI().get(), selectedGames));
         },
@@ -270,7 +279,27 @@ public final class GamesForEventView extends VerticalLayout {
     }
   }
 
+  private void createGameDateFilter() {
+    this.gameDateFilter.setTooltipText("Filter the results by game date");
+    this.gameDateFilter.setDataProvider(DataProvider.fromCallbacks(new GameDatesFetchCallback(), new GameDatesSizeCallback()));
+    this.gameDateFilter.setItemLabelGenerator(date -> Optional.ofNullable(date).map(DATE_FORMATTER::format).orElse("All Games"));
+    this.gameDateFilter.setPlaceholder("Filter by game date...");
+    this.gameDateFilter.addValueChangeListener(event -> filterByGameDate(event.getValue()));
+    this.gameDateFilter.setEmptySelectionAllowed(true);
+    this.gameDateFilter.setEmptySelectionCaption("All Games");
+  }
+
+  private void filterByGameDate(LocalDate filter) {
+    refreshGrid(filter);
+  }
+
   private void refreshGrid() {
+    var selectedFilter = this.gameDateFilter.getValue();
+    refreshGrid(selectedFilter);
+    this.gameDateFilter.getDataProvider().refreshAll();
+  }
+
+  private void refreshGrid(LocalDate gameDateFilterValue) {
     Optional.ofNullable(this.currentEvent)
         .ifPresentOrElse(
             e -> {
@@ -290,7 +319,10 @@ public final class GamesForEventView extends VerticalLayout {
             }
         );
 
-    this.grid.getDataProvider().refreshAll();
+    ((ConfigurableFilterDataProvider<Game, Void, LocalDate>) this.grid.getDataProvider())
+        .setFilter(gameDateFilterValue);
+
+//    this.grid.getDataProvider().refreshAll();
     this.grid.recalculateColumnWidths();
   }
 
@@ -328,10 +360,7 @@ public final class GamesForEventView extends VerticalLayout {
         .setFlexGrow(1)
         .setSortProperty("player.lastName");
 
-    grid.addColumn(new LocalDateRenderer<>(
-            game -> game.gameDate().atZone(ZoneId.systemDefault()).toLocalDate(),
-            () -> DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)
-        ))
+    grid.addColumn(new LocalDateRenderer<>(Game::gameDate, () -> DATE_FORMATTER))
         .setHeader("Game Date")
         .setResizable(true)
         .setSortable(true)
@@ -352,19 +381,34 @@ public final class GamesForEventView extends VerticalLayout {
     return grid;
   }
 
-  private class GameFetchCallback implements FetchCallback<Game, Void> {
+  private class GameDatesFetchCallback implements FetchCallback<LocalDate, Void> {
     @Override
-    public Stream<Game> fetch(Query<Game, Void> query) {
+    public Stream<LocalDate> fetch(Query<LocalDate, Void> query) {
       // Satisfy Vaadin's contract even though we aren't supporting filtering or pagination
       query.getLimit();
       query.getOffset();
+
+      return Optional.ofNullable(currentEvent)
+          .map(e -> gameService.getGameDatesForEvent(e.id()))
+          .orElseGet(Stream::empty);
+    }
+  }
+
+  private class GameFetchCallback implements FetchCallback<Game, LocalDate> {
+    @Override
+    public Stream<Game> fetch(Query<Game, LocalDate> query) {
+      // Satisfy Vaadin's contract even though we aren't supporting filtering or pagination
+      query.getLimit();
+      query.getOffset();
+
+      Log.infof("Fetching games for query with filter: %s", query.getFilter());
 
       var rowIndex = new AtomicInteger(1);
 
       return Optional.ofNullable(currentEvent)
           .map(e -> createSort(query.getSortOrders())
-              .map(sort -> gameService.getGames(e.id(), sort))
-              .orElseGet(() -> gameService.getGames(e.id()))
+              .map(sort -> gameService.getGames(e.id(), sort, query.getFilter()))
+              .orElseGet(() -> gameService.getGames(e.id(), null, query.getFilter()))
           )
           .map(List::stream)
           .orElseGet(Stream::empty)
@@ -399,11 +443,20 @@ public final class GamesForEventView extends VerticalLayout {
     }
   }
 
-  private class GameSizeCallback implements CountCallback<Game, Void> {
+  private class GameDatesSizeCallback implements CountCallback<LocalDate, Void> {
     @Override
-    public int count(Query<Game, Void> query) {
+    public int count(Query<LocalDate, Void> query) {
       return Optional.ofNullable(currentEvent)
-          .map(e -> (int) gameService.countGamesForEvent(e.id()))
+          .map(e -> (int) gameService.countGameDatesForEvent(e.id()))
+          .orElse(0);
+    }
+  }
+
+  private class GameSizeCallback implements CountCallback<Game, LocalDate> {
+    @Override
+    public int count(Query<Game, LocalDate> query) {
+      return Optional.ofNullable(currentEvent)
+          .map(e -> (int) gameService.countGamesForEvent(e.id(), query.getFilter()))
           .orElse(0);
     }
   }

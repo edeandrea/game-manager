@@ -1,11 +1,11 @@
 INSERT INTO events (id, name, description, event_date)
-VALUES (nextval('events_seq'), 'DevNexus 2026', 'Annual event held by the Atlanta Java Users Group', '2026-03-04 00:00:00+00');
+VALUES (nextval('events_seq'), 'DevNexus 2026', 'Annual event held by the Atlanta Java Users Group', '2026-03-04');
 
--- INSERT INTO games (id, time_to_complete, event_id, game_date, email, first_name, last_name)
--- VALUES (nextval('games_seq'), 30000000000, currval('events_seq'), '2026-03-05 00:00:00+00', 'eric.deandrea@ibm.com', 'Eric', 'Deandrea');
---
--- INSERT INTO games (id, time_to_complete, event_id, game_date, email, first_name, last_name)
--- VALUES (nextval('games_seq'), 60000000000, currval('events_seq'), '2026-03-05 00:00:00+00', 'edeandrea@redhat.com.com', 'John', 'Smith');
---
--- INSERT INTO games (id, time_to_complete, event_id, game_date, email, first_name, last_name)
--- VALUES (nextval('games_seq'), 15000000000, currval('events_seq'), '2026-03-05 00:00:00+00', 'edeandre@redhat.com', 'Jane', 'Doe');
+INSERT INTO games (id, time_to_complete, event_id, game_date, email, first_name, last_name)
+VALUES (nextval('games_seq'), 30000000000, currval('events_seq'), '2026-03-06', 'eric.deandrea@ibm.com', 'Eric', 'Deandrea');
+
+INSERT INTO games (id, time_to_complete, event_id, game_date, email, first_name, last_name)
+VALUES (nextval('games_seq'), 60000000000, currval('events_seq'), '2026-03-04', 'edeandrea@redhat.com.com', 'John', 'Smith');
+
+INSERT INTO games (id, time_to_complete, event_id, game_date, email, first_name, last_name)
+VALUES (nextval('games_seq'), 15000000000, currval('events_seq'), '2026-03-05', 'edeandre@redhat.com', 'Jane', 'Doe');

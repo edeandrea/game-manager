@@ -4,8 +4,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
@@ -50,21 +53,19 @@ public class GameService {
     this.ideService = ideService;
   }
 
-  @WithSpan("GameService.getGames")
-  @Transactional
-  public List<GameDto> getGames(@Valid @NotNull @SpanAttribute("arg.eventId") Long eventId) {
-    Log.infof("Getting games for event with id: %s", eventId);
-    return this.gameRepository.getGamesForEvent(eventId)
-        .stream()
-        .map(this.gameMapper::toDto)
-        .toList();
+  @WithSpan("GameService.getGameDatesForEvent")
+  public Stream<LocalDate> getGameDatesForEvent(@SpanAttribute("arg.eventId") Long eventId) {
+    Log.infof("Getting game dates for event with id: %s", eventId);
+    return this.gameRepository.getGameDatesOrderedChronologically(eventId)
+        .stream();
   }
 
-  @WithSpan("GameService.getGamesSorted")
+  @WithSpan("GameService.getGames")
   @Transactional
-  public List<GameDto> getGames(@Valid @NotNull @SpanAttribute("arg.eventId") Long eventId, @SpanAttribute("arg.sort") Sort sort) {
-    Log.infof("Getting games for event with id: %s, sorted by: %s", eventId, sort);
-    return this.gameRepository.getGamesForEvent(eventId, sort)
+  public List<GameDto> getGames(@Valid @NotNull @SpanAttribute("arg.eventId") Long eventId, @SpanAttribute("arg.sort") Sort sort, @SpanAttribute("arg.gameDateFilter") Optional<LocalDate> gameDateFilter) {
+    Log.infof("Getting games for event with id: %s, sorted by: %s, with date filter: %s", eventId, sort, gameDateFilter);
+
+    return this.gameRepository.getGamesForEvent(eventId, sort, gameDateFilter)
         .stream()
         .map(this.gameMapper::toDto)
         .toList();
@@ -88,9 +89,16 @@ public class GameService {
 
   @WithSpan("GameService.countGamesForEvent")
   @Transactional
-  public long countGamesForEvent(@SpanAttribute("arg.eventId") Long eventId) {
+  public long countGamesForEvent(@SpanAttribute("arg.eventId") Long eventId, @SpanAttribute("arg.filter") Optional<LocalDate> gameDateFilter) {
     Log.infof("Counting games for event with id: %s", eventId);
-    return this.gameRepository.countGamesForEvent(eventId);
+    return this.gameRepository.countGamesForEvent(eventId, gameDateFilter);
+  }
+
+  @WithSpan("GameService.countGameDatesForEvent")
+  @Transactional
+  public long countGameDatesForEvent(@SpanAttribute("arg.eventId") Long eventId) {
+    Log.infof("Counting game dates for event with id: %s", eventId);
+    return this.gameRepository.countGameDatesForEvent(eventId);
   }
 
   @WithSpan("GameService.deleteGame")

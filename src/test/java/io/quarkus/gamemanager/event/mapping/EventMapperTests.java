@@ -2,7 +2,7 @@ package io.quarkus.gamemanager.event.mapping;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
 import jakarta.inject.Inject;
@@ -32,14 +32,14 @@ class EventMapperTests {
     var game = new Game()
         .withId((long) fakeData.number().positive())
         .withPlayer(player)
-        .withGameDate(Instant.now())
+        .withGameDate(LocalDate.now())
         .withTimeToComplete(fakeData.duration().atMostMinutes(1));
 
     var event = new Event()
         .withId((long) fakeData.number().positive())
         .withName(fakeData.lorem().characters(10, 20))
         .withDescription(fakeData.lorem().sentence())
-        .withEventDate(Instant.now())
+        .withEventDate(LocalDate.now())
         .withGame(game);
 
     game.setEvent(event);
@@ -75,13 +75,13 @@ class EventMapperTests {
         (long) fakeData.number().positive(),
         player,
         (long) fakeData.number().positive(),
-        Instant.now(),
+        LocalDate.now(),
         fakeData.duration().atMostMinutes(1)
     );
 
     var event = new EventDto(
         game.eventId(),
-        Instant.now(),
+        LocalDate.now(),
         fakeData.lorem().characters(10, 20),
         fakeData.lorem().sentence(),
         List.of(game)

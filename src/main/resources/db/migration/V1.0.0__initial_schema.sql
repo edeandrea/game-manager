@@ -3,7 +3,7 @@ create sequence if not exists events_seq start with 1 increment by 1;
 create sequence if not exists games_seq start with 1 increment by 1;
 
 create table if not exists events (
-		event_date timestamp(6) with time zone not null,
+		event_date date not null,
 		id bigint not null,
 		description TEXT not null,
 		name varchar(255) not null,
@@ -13,7 +13,7 @@ create table if not exists events (
 create table if not exists games (
 		time_to_complete numeric(21,0) not null,
 		event_id bigint not null,
-		game_date timestamp(6) with time zone not null,
+		game_date date not null,
 		id bigint not null,
 		email varchar(255),
 		first_name varchar(255) not null,
