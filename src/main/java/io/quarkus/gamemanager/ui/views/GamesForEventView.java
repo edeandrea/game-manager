@@ -265,7 +265,7 @@ public final class GamesForEventView extends VerticalLayout {
 
       var newGame = new GameDto(player, this.currentEvent.id(), elapsedTime);
       var savedGame = this.gameService.addGame(newGame);
-      this.grid.getDataProvider().refreshAll();
+      refreshGrid();
       this.gameBroadcaster.fireEvent(new GameAddedEvent(getUI().get(), savedGame, isNewHighScore));
     }
   }

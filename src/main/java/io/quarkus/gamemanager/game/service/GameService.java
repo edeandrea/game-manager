@@ -28,6 +28,8 @@ import io.quarkus.gamemanager.ide.IdeService;
 import io.quarkus.logging.Log;
 import io.quarkus.panache.common.Sort;
 
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.smallrye.mutiny.infrastructure.Infrastructure;
@@ -48,8 +50,9 @@ public class GameService {
     this.ideService = ideService;
   }
 
+  @WithSpan("GameService.getGames")
   @Transactional
-  public List<GameDto> getGames(@Valid @NotNull Long eventId) {
+  public List<GameDto> getGames(@Valid @NotNull @SpanAttribute("arg.eventId") Long eventId) {
     Log.infof("Getting games for event with id: %s", eventId);
     return this.gameRepository.getGamesForEvent(eventId)
         .stream()
@@ -57,8 +60,9 @@ public class GameService {
         .toList();
   }
 
+  @WithSpan("GameService.getGamesSorted")
   @Transactional
-  public List<GameDto> getGames(@Valid @NotNull Long eventId, Sort sort) {
+  public List<GameDto> getGames(@Valid @NotNull @SpanAttribute("arg.eventId") Long eventId, @SpanAttribute("arg.sort") Sort sort) {
     Log.infof("Getting games for event with id: %s, sorted by: %s", eventId, sort);
     return this.gameRepository.getGamesForEvent(eventId, sort)
         .stream()
@@ -66,8 +70,9 @@ public class GameService {
         .toList();
   }
 
+  @WithSpan("GameService.addGame")
   @Transactional
-  public GameDto addGame(@Valid @NotNull GameDto gameDto) {
+  public GameDto addGame(@Valid @NotNull @SpanAttribute("arg.game") GameDto gameDto) {
     Log.infof("Adding game: %s", gameDto);
     var eventId = gameDto.eventId();
 
@@ -76,23 +81,27 @@ public class GameService {
         .orElseThrow(() -> new NotAcceptableException("Game is not associated with any event, or event %d can not be found".formatted(eventId)));
   }
 
-  public void deleteGames(Collection<GameDto> games) {
+  @WithSpan("GameService.deleteGames")
+  public void deleteGames(@SpanAttribute("arg.games") Collection<GameDto> games) {
     games.forEach(this::deleteGame);
   }
 
+  @WithSpan("GameService.countGamesForEvent")
   @Transactional
-  public long countGamesForEvent(Long eventId) {
+  public long countGamesForEvent(@SpanAttribute("arg.eventId") Long eventId) {
     Log.infof("Counting games for event with id: %s", eventId);
     return this.gameRepository.countGamesForEvent(eventId);
   }
 
+  @WithSpan("GameService.deleteGame")
   @Transactional
-  public void deleteGame(GameDto gameDto) {
+  public void deleteGame(@SpanAttribute("arg.game") GameDto gameDto) {
     Log.infof("Deleting game: %s", gameDto);
     this.gameRepository.deleteById(gameDto.id());
   }
 
-  public Multi<Integer> countDown(Integer startingFrom, Duration every) {
+  @WithSpan("GameService.countDown")
+  public Multi<Integer> countDown(@SpanAttribute("arg.startingFrom") Integer startingFrom, @SpanAttribute("arg.every") Duration every) {
     return Multi.createFrom()
         .range(0, startingFrom + 1)
         .map(i -> startingFrom - i)
@@ -106,6 +115,7 @@ public class GameService {
         .emitOn(Infrastructure.getDefaultExecutor());
   }
 
+  @WithSpan("GameService.timeGame")
   public Multi<Long> timeGame() {
     return Multi.createFrom()
         .ticks()
@@ -148,6 +158,7 @@ public class GameService {
     }
   }
 
+  @WithSpan("GameService.setUpNewGame")
   public Uni<Void> setUpNewGame() {
     return Uni.createFrom().voidItem()
         .runSubscriptionOn(Infrastructure.getDefaultExecutor())

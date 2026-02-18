@@ -19,6 +19,9 @@ import io.quarkus.gamemanager.game.service.GameDevUiClient;
 import io.quarkus.gamemanager.ide.IdeService;
 import io.quarkus.logging.Log;
 
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
+
 @ApplicationScoped
 public class IntelliJService implements IdeService {
   private final GameDevUiClient gameDevUiClient;
@@ -33,7 +36,8 @@ public class IntelliJService implements IdeService {
   }
 
   @Override
-  public void startInIde(Path gameDir) {
+  @WithSpan("IntelliJService.startInIde")
+  public void startInIde(@SpanAttribute("arg.gameDir") Path gameDir) {
     Log.infof("Opening new game in directory [%s]", gameDir);
     var intellijProcess = getIntellijProcess();
     this.intelliJActionService.executeRunConfiguration("booth-game", gameDir.toString());

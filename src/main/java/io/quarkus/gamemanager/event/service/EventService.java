@@ -17,6 +17,9 @@ import io.quarkus.gamemanager.game.mapping.GameMapper;
 import io.quarkus.gamemanager.game.repository.GameRepository;
 import io.quarkus.logging.Log;
 
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
+
 @ApplicationScoped
 public class EventService {
   private final EventRepository eventRepository;
@@ -31,13 +34,15 @@ public class EventService {
     this.gameMapper = gameMapper;
   }
 
+  @WithSpan("EventService.getAllEvents")
   public List<EventDto> getAllEvents() {
     Log.info("Getting all events");
     return getAllEvents(EventQuery.empty());
   }
 
+  @WithSpan("EventService.getAllEventsWithQuery")
   @Transactional
-  public List<EventDto> getAllEvents(EventQuery eventQuery) {
+  public List<EventDto> getAllEvents(@SpanAttribute("arg.query") EventQuery eventQuery) {
     Log.infof("Getting events with query: %s", eventQuery);
     return this.eventRepository.getEvents(eventQuery)
         .stream()
@@ -45,15 +50,17 @@ public class EventService {
         .toList();
   }
 
+  @WithSpan("EventService.getEvent")
   @Transactional
-  public Optional<EventDto> getEvent(@Valid @NotNull Long eventId) {
+  public Optional<EventDto> getEvent(@Valid @NotNull @SpanAttribute("arg.eventId") Long eventId) {
     Log.infof("Getting event with id: %s", eventId);
     return this.eventRepository.findByIdOptional(eventId)
         .map(this.eventMapper::toDto);
   }
 
+  @WithSpan("EventService.getLeaderboard")
   @Transactional
-  public List<GameDto> getLeaderboard(@Valid @NotNull Long eventId) {
+  public List<GameDto> getLeaderboard(@Valid @NotNull @SpanAttribute("arg.eventId") Long eventId) {
     Log.infof("Getting leaderboard for event with id: %s", eventId);
     return this.gameRepository.getLeaderboard(eventId)
         .stream()
@@ -61,22 +68,26 @@ public class EventService {
         .toList();
   }
 
+  @WithSpan("EventService.deleteEvent")
   @Transactional
-  public void deleteEvent(@Valid @NotNull Long eventId) {
+  public void deleteEvent(@Valid @NotNull @SpanAttribute("arg.eventId") Long eventId) {
     Log.infof("Deleting event with id: %s", eventId);
     this.eventRepository.deleteById(eventId);
   }
 
+  @WithSpan("EventService.saveEvent")
   @Transactional
-  public void saveEvent(EventDto eventDto) {
+  public void saveEvent(@SpanAttribute("arg.event") EventDto eventDto) {
     Log.infof("Saving event: %s", eventDto);
     var eventToSave = this.eventMapper.toEntity(eventDto);
     var updatedEvent = this.eventRepository.findById(eventToSave.getId()).from(eventToSave);
     this.eventRepository.persist(updatedEvent);
   }
 
+  @WithSpan("EventService.addEvent")
   @Transactional
-  public EventDto addEvent(@Valid @NotNull EventDto eventDto) {
+  public EventDto addEvent(@Valid @NotNull @SpanAttribute("arg.event")
+                             EventDto eventDto) {
     Log.infof("Adding event: %s", eventDto);
     var event = (eventDto.id() == null) ?
         eventDto :

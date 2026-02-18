@@ -2,6 +2,8 @@ package io.quarkus.gamemanager.intellij.service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.quarkiverse.langchain4j.RegisterAiService;
 import io.quarkiverse.langchain4j.mcp.runtime.McpToolBox;
 
@@ -61,5 +63,6 @@ public interface IntelliJActionService {
       timeout: 15000
       """)
   @McpToolBox("intellij")
-  String executeRunConfiguration(String runConfigName, String projectPath);
+  @WithSpan("IntelliJActionService.executeRunConfiguration")
+  String executeRunConfiguration(@SpanAttribute("arg.runConfigName") String runConfigName, @SpanAttribute("arg.projectPath") String projectPath);
 }

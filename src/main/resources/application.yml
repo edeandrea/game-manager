@@ -60,6 +60,21 @@ quarkus:
   jgit:
     devservices:
       enabled: false
+  otel:
+    logs:
+      enabled: true
+    metrics:
+      enabled: true
+    exporter:
+      otlp:
+        endpoint: https://otlp-gateway-prod-us-east-2.grafana.net/otlp
+        protocol: http/protobuf
+        headers: Authorization=Basic ${GRAFANA_AUTH_TOKEN}
+  datasource:
+    metrics:
+      enabled: true
+    jdbc:
+      telemetry: true
 
 '%dev':
   quarkus:
@@ -77,6 +92,18 @@ quarkus:
         sql: true
         format-sql: true
         highlight-sql: true
+
+'%test':
+  quarkus:
+    otel:
+      logs:
+        enabled: false
+    observability:
+      enabled: false
+    micrometer:
+      export:
+        otlp:
+          enabled: "${%test.quarkus.observability.enabled}"
 
 '%prod':
   quarkus:
