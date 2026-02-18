@@ -152,7 +152,7 @@ public final class GamesForEventView extends VerticalLayout {
 
       ui.access(() -> {
         Notification.show(msg, 3000, Position.MIDDLE);
-        grid.getDataProvider().refreshAll();
+        refreshGrid();
       });
     }
   }
@@ -247,11 +247,11 @@ public final class GamesForEventView extends VerticalLayout {
       Notification.show("Game cancelled");
     }
     else {
-      var newGame = new GameDto(player, this.currentEvent.id(), elapsedTime);
-
-      var isNewHighScore = this.grid.getLazyDataView().getItems()
+      var topScore = this.grid.getLazyDataView().getItems()
           .sorted(Comparator.comparing(Game::timeToComplete))
-          .findFirst()
+          .findFirst();
+
+      var isNewHighScore = topScore.isEmpty() || topScore
           .filter(game -> elapsedTime.compareTo(game.timeToComplete()) <= 0)
           .map(g -> true)
           .orElse(false);
@@ -263,6 +263,7 @@ public final class GamesForEventView extends VerticalLayout {
         Notification.show("Sooooo close!", 3000, Position.MIDDLE);
       }
 
+      var newGame = new GameDto(player, this.currentEvent.id(), elapsedTime);
       var savedGame = this.gameService.addGame(newGame);
       this.grid.getDataProvider().refreshAll();
       this.gameBroadcaster.fireEvent(new GameAddedEvent(getUI().get(), savedGame, isNewHighScore));

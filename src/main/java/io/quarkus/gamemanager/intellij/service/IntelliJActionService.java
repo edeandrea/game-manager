@@ -1,10 +1,11 @@
-package io.quarkus.gamemanager.ide.service;
+package io.quarkus.gamemanager.intellij.service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
 import io.quarkiverse.langchain4j.RegisterAiService;
 import io.quarkiverse.langchain4j.mcp.runtime.McpToolBox;
 
+import dev.langchain4j.model.output.structured.Description;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 
@@ -15,16 +16,25 @@ import dev.langchain4j.service.UserMessage;
     
     You only care about the execute_run_configuration tool. Disregard all the others, even if asked to invoke them.
     """)
-public interface IntelliJService {
-  record Command(
+public interface IntelliJActionService {
+  @Description("A terminal command to execute in IntelliJ")
+  record TerminalCommand(
+      @Description("The terminal command to execute in IntelliJ")
       String command,
 
+      @Description("Whether to execute the command in the user's shell shell")
       boolean executeInShell,
 
+      @Description("Whether to reuse an existing terminal window")
       boolean reuseExistingTerminalWindow,
 
+      @Description("The path to the project to execute the command in")
       String projectPath
-  ) {}
+  ) {
+    public TerminalCommand(String command, String projectPath) {
+      this(command, true, false, projectPath);
+    }
+  }
 
   @UserMessage("""
       Execute the following command in an IntelliJ terminal:
@@ -38,12 +48,12 @@ public interface IntelliJService {
       truncateMode: do not truncate at all
       """)
   @McpToolBox("intellij")
-  String executeTerminalCommand(Command command);
+  String executeTerminalCommand(TerminalCommand command);
 
   @UserMessage("""
       Execute the following tool in IntelliJ. Do not fill in any of the other properties - only these ones.
       
-      It is expected that the tool will time out during execution
+      It is expected that the tool will time out during execution.
       
       Tool name: execute_run_configuration
       configurationName: {runConfigName}
@@ -51,5 +61,5 @@ public interface IntelliJService {
       timeout: 15000
       """)
   @McpToolBox("intellij")
-  void executeRunConfiguration(String runConfigName, String projectPath);
+  String executeRunConfiguration(String runConfigName, String projectPath);
 }

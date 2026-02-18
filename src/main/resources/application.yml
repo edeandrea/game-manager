@@ -14,7 +14,7 @@ quarkus:
 #      base-url: http://localhost:11434/v1
       chat-model:
         model-name: gpt-5-mini
-#        model-name: granite4:latest
+#        model-name: qwen3:4b
     mcp:
       intellij:
         transport-type: stdio
@@ -23,10 +23,10 @@ quarkus:
         tool-execution-timeout: 10s
         environment:
           IJ_MCP_SERVER_PORT: 64342
-    #        transport-type: streamable-http
+    #        transport-type: http
 #        url: http://localhost:64342/sse
-    log-requests: true
-    log-responses: true
+#    log-requests: true
+#    log-responses: true
   http:
     test-port: 0
     cors:
@@ -77,3 +77,11 @@ quarkus:
         sql: true
         format-sql: true
         highlight-sql: true
+
+'%prod':
+  quarkus:
+    datasource:
+      username: events
+      password: events
+      jdbc:
+        url: jdbc:postgresql://localhost:5432/events

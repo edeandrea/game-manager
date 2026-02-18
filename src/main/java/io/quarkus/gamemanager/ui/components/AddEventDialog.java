@@ -110,7 +110,7 @@ public final class AddEventDialog extends Dialog {
     return Optional.ofNullable(this.newEvent);
   }
 
-  private static final class EventForm {
+  public static final class EventForm {
     @NotNull(message = "Event date is required")
     private LocalDate eventDate;
 
