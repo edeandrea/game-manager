@@ -2,6 +2,22 @@
 
 A web application for managing game events and their associated games, built with modern Java enterprise technologies.
 
+People will register for the game at the booth and play it. The game management system will keep track of who has played, scores, etc. We can even run the leaderboard on the main monitor in the booth and it'll refresh automatically as people play.
+
+The game starts with a Quarkus + LangChain4j app, running in the IDE with dev mode + continuous testing running. The tests are failing. The objective is to get the tests to go green as fast as possible.
+
+> [!NOTE]
+> It's not too difficult & shouldn't take someone more than 5-10 minutes
+
+The whole game itself will run on the following Raspberry Pi setup (showing how efficient Quarkus is that the whole system can run on it, + a user interface, IntelliJ IDE, etc)
+- [Raspberry Pi 500 Desktop Kit](https://www.raspberrypi.com/products/500-desktop-kit/)
+- [Raspberry Pi 500](https://www.raspberrypi.com/products/raspberry-pi-500/)
+- [Raspberry Pi Monitor](https://www.raspberrypi.com/products/raspberry-pi-monitor/)
+
+The game manager itself (this application) is a nice showcase of Quarkus + LangChain4j, how to be an MCP client, etc.
+
+The entire system is also monitored real-time in [Grafana Cloud](https://grafana.com/products/cloud).
+
 ## Technology Stack
 
 ### Backend Framework(s)
