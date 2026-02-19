@@ -5,8 +5,11 @@ import static org.awaitility.Awaitility.await;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.ProcessingException;
@@ -21,6 +24,8 @@ import io.quarkus.logging.Log;
 
 import io.opentelemetry.instrumentation.annotations.SpanAttribute;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
+import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.infrastructure.Infrastructure;
 
 @ApplicationScoped
 public class IntelliJService implements IdeService {
@@ -40,9 +45,39 @@ public class IntelliJService implements IdeService {
   public void startInIde(@SpanAttribute("arg.gameDir") Path gameDir) {
     Log.infof("Opening new game in directory [%s]", gameDir);
     var intellijProcess = getIntellijProcess();
-    this.intelliJActionService.executeRunConfiguration("booth-game", gameDir.toString());
 
     Log.infof("Started intellij process: %s", intellijProcess.pid());
+
+    // Run an async process to open some files
+    var unis = Stream.of(
+        "README.md",
+        "src/main/resources/application.properties",
+        "src/test/java/io/quarkus/game/StorytellerTests.java",
+        "src/main/java/io/quarkus/game/Tools.java",
+        "src/main/java/io/quarkus/game/ContainsRequiredInfoGuardrail.java",
+        "src/main/java/io/quarkus/game/Storyteller.java"
+        )
+        .map(file -> Uni.createFrom()
+            .item(() -> this.intelliJActionService.openFile(file, gameDir.toString()))
+            .invoke(f -> Log.infof("Opened file in IntelliJ: %s", f))
+            .runSubscriptionOn(Infrastructure.getDefaultExecutor())
+        )
+        .collect(Collectors.toCollection(ArrayList::new));
+
+    unis.add(
+        Uni.createFrom()
+            .item(() -> this.intelliJActionService.executeRunConfiguration("booth-game", gameDir.toString()))
+            .invoke(output -> Log.infof("Run configuration executed: %s", output))
+            .runSubscriptionOn(Infrastructure.getDefaultExecutor())
+    );
+
+    Uni.join()
+        .all(unis)
+        .andCollectFailures()
+        .subscribe().with(
+            _ -> Log.info("All IntelliJ actions completed"),
+            t -> Log.error("Failed to execute things in intellij", t)
+        );
 
     // Now wait for dev mode to start
     await("game startup")
@@ -54,7 +89,7 @@ public class IntelliJService implements IdeService {
         .until(() -> this.gameDevUiClient.health().getStatus() == Status.OK.getStatusCode());
 
     try {
-      new ProcessBuilder("open", this.gameConfig.appDevUiUrl().toString())
+      new ProcessBuilder("open", "%s/continuous-testing".formatted(this.gameConfig.appDevUiUrl().toString()))
           .start();
     }
     catch (IOException e) {

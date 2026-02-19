@@ -35,14 +35,14 @@ public class InteractionObserver implements ChatModelListener {
 
   @Override
 	public void onResponse(ChatModelResponseContext responseContext) {
-		Log.infof("Response received: %s", responseContext.chatResponse());
+		Log.debugf("Response received: %s", responseContext.chatResponse());
 
 		var modelName = responseContext.chatRequest().modelName();
 		incrementTotals(responseContext.chatResponse().tokenUsage(), modelName);
 	}
 
   public void interactionStarted(@Observes AiServiceStartedEvent event) {
-    Log.infof("Interaction started: %s", event);
+    Log.debugf("Interaction started: %s", event);
 
     var tags = Tags.of(
         Tag.of("interfaceName", event.invocationContext().interfaceName()),

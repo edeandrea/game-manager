@@ -8,6 +8,8 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -39,6 +41,14 @@ import io.smallrye.mutiny.infrastructure.Infrastructure;
 
 @ApplicationScoped
 public class GameService {
+  private static final Set<String> IGNORE_LINES_CONTAINING = Set.of(
+      "@ToolBox",
+      "@OutputGuardrails",
+      "@UserMessage",
+      "@RegisterAiService",
+      "@Tool"
+  );
+
   private final GameConfig gameConfig;
   private final GameRepository gameRepository;
   private final EventRepository eventRepository;
@@ -189,12 +199,46 @@ public class GameService {
               Log.infof("Checkout directory [%s] doesn't exist");
               cloneRepo(checkoutDir);
             }
+
+            setUpGameStart(checkoutDir);
           }
           catch (Exception e) {
             throw new RuntimeException(e);
           }
         })
         .invoke(() -> this.ideService.startInIde(this.gameConfig.checkoutDir().normalize().toAbsolutePath()));
+  }
+
+  private void setUpGameStart(Path gameDir) {
+    Stream.of(
+        "src/main/java/io/quarkus/game/Storyteller.java",
+        "src/main/java/io/quarkus/game/Tools.java"
+    )
+        .map(gameDir::resolve)
+        .forEach(this::rewriteFile);
+  }
+
+  private void rewriteFile(Path file) {
+    Log.infof("Rewriting file: %s", file);
+    var newFileContent = getAllLines(file)
+        .filter(line -> IGNORE_LINES_CONTAINING.stream().noneMatch(line::contains))
+        .collect(Collectors.joining("\n"));
+
+    try {
+      Files.writeString(file, newFileContent);
+    }
+    catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private Stream<String> getAllLines(Path file) {
+    try {
+      return Files.readAllLines(file).stream();
+    }
+    catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private GameDto saveGame(Event event, GameDto gameDto) {
