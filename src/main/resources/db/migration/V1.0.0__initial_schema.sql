@@ -13,7 +13,7 @@ create table if not exists events (
 create table if not exists games (
 		time_to_complete numeric(21,0) not null,
 		event_id bigint not null,
-		game_date date not null,
+		game_date timestamp(6) with time zone not null,
 		id bigint not null,
 		email varchar(255),
 		first_name varchar(255) not null,
@@ -25,3 +25,5 @@ alter table if exists games
 	 add constraint games_event_id_fkey
 	 foreign key (event_id)
 	 references events;
+
+create index if not exists idx_game_game_date on games (game_date);

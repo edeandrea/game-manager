@@ -1,7 +1,7 @@
 package io.quarkus.gamemanager.game.domain.jpa;
 
 import java.time.Duration;
-import java.time.LocalDate;
+import java.time.Instant;
 import java.util.Objects;
 
 import jakarta.persistence.Column;
@@ -11,6 +11,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
@@ -23,7 +24,12 @@ import org.hibernate.annotations.SourceType;
 import io.quarkus.gamemanager.event.domain.jpa.Event;
 
 @Entity
-@Table(name = "games")
+@Table(
+    name = "games",
+    indexes = {
+        @Index(name = "idx_game_game_date", columnList = "game_date")
+    }
+)
 public class Game {
   @Id
   @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "games_seq")
@@ -39,7 +45,7 @@ public class Game {
 
   @CreationTimestamp(source = SourceType.DB)
 	@Column(updatable = false, nullable = false)
-	private LocalDate gameDate;
+	private Instant gameDate;
 
   @NotNull(message = "Time to complete is required")
   @Column(nullable = false)
@@ -84,15 +90,15 @@ public class Game {
     return this;
   }
 
-  public LocalDate getGameDate() {
+  public Instant getGameDate() {
     return gameDate;
   }
 
-  public void setGameDate(LocalDate gameDate) {
+  public void setGameDate(Instant gameDate) {
     withGameDate(gameDate);
   }
 
-  public Game withGameDate(LocalDate gameDate) {
+  public Game withGameDate(Instant gameDate) {
     this.gameDate = gameDate;
     return this;
   }

@@ -1,7 +1,9 @@
 package io.quarkus.gamemanager.ui.views;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Comparator;
@@ -50,11 +52,12 @@ import com.vaadin.flow.data.provider.DataChangeEvent;
 import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.data.provider.QuerySortOrder;
-import com.vaadin.flow.data.renderer.LocalDateRenderer;
+import com.vaadin.flow.data.renderer.LocalDateTimeRenderer;
 import com.vaadin.flow.data.selection.SelectionEvent;
 
 public final class GamesForEventView extends VerticalLayout {
   private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG);
+  private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("MMMM d, yyyy h:mm:ss a");
 
   private final GameService gameService;
   private final GameBroadcaster gameBroadcaster;
@@ -75,7 +78,7 @@ public final class GamesForEventView extends VerticalLayout {
       return gameDto().timeToComplete();
     }
 
-    public LocalDate gameDate() {
+    public Instant gameDate() {
       return gameDto().gameDate();
     }
 
@@ -360,7 +363,10 @@ public final class GamesForEventView extends VerticalLayout {
         .setFlexGrow(1)
         .setSortProperty("player.lastName");
 
-    grid.addColumn(new LocalDateRenderer<>(Game::gameDate, () -> DATE_FORMATTER))
+    grid.addColumn(new LocalDateTimeRenderer<>(
+        game -> Optional.ofNullable(game).map(Game::gameDate).map(date -> date.atZone(ZoneId.systemDefault()).toLocalDateTime()).orElse(null),
+            () -> DATE_TIME_FORMATTER
+        ))
         .setHeader("Game Date")
         .setResizable(true)
         .setSortable(true)
