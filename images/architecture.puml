@@ -1,0 +1,71 @@
+@startuml Game Manager Architecture
+
+skinparam component {
+    BackgroundColor #E8F4F8
+}
+
+skinparam database {
+    BackgroundColor #D4E8D4
+}
+
+skinparam cloud {
+    BackgroundColor #FFE8D4
+}
+
+package "Presentation Layer" {
+    [Vaadin UI]
+    [REST API]
+}
+
+package "Business Layer" {
+    [Services]
+    [Mappers]
+}
+
+package "Data Layer" {
+    [Repositories]
+    [Domain Models]
+}
+
+package "Integration Layer" {
+    [IntelliJ MCP]
+    [LangChain4j]
+}
+
+package "Observability" {
+    [Metrics & Tracing]
+}
+
+database "PostgreSQL" as DB
+
+cloud "OpenAI" as AI
+cloud "Grafana Cloud" as Grafana
+
+[Vaadin UI] --> [Services]
+[REST API] --> [Services]
+
+[Services] --> [Repositories]
+[Services] --> [Mappers]
+[Services] --> [LangChain4j]
+
+[Mappers] --> [Domain Models]
+[Repositories] --> [Domain Models]
+
+[Domain Models] --> DB
+
+[LangChain4j] ..> [IntelliJ MCP] : MCP Protocol
+[LangChain4j] ..> AI : API
+
+[Metrics & Tracing] ..> Grafana : OpenTelemetry
+
+note bottom of [IntelliJ MCP]
+  IDE automation
+  via Model Context Protocol
+end note
+
+note bottom of DB
+  Flyway migrations
+  Hibernate ORM with Panache
+end note
+
+@enduml

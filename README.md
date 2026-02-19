@@ -1,65 +1,95 @@
-# leaderboard
+# Game Manager
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+A web application for managing game events and their associated games, built with modern Java enterprise technologies.
 
-If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
+## Technology Stack
 
-## Running the application in dev mode
+### Backend Framework(s)
+- [Quarkus](https://quarkus.io/)
+- [Java 25](https://www.oracle.com/java/)
+- [Maven](https://maven.apache.org/)
 
-You can run your application in dev mode that enables live coding using:
+### Database & Persistence
+- [PostgreSQL](https://www.postgresql.org/)
+- [Hibernate ORM with Panache](https://quarkus.io/guides/hibernate-orm-panache)
+- [Flyway](https://quarkus.io/guides/flyway)
+- [Compose Dev Service](https://quarkus.io/guides/compose-dev-services)
 
-```shell script
+### Frontend
+- [Vaadin Flow](https://quarkus.io/extensions/com.vaadin/vaadin-quarkus-extension/)
+- [Line Awesome](https://icons8.com/line-awesome)
+
+### AI & Integration
+- [LangChain4j](https://docs.langchain4j.dev/)
+  - [OpenAI](https://openai.com/)
+  - [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
+- [IntelliJ MCP Server](https://www.jetbrains.com/help/idea/mcp-server.html)
+
+### Observability
+- [OpenTelemetry](https://quarkus.io/guides/opentelemetry)
+- [Micrometer](https://quarkus.io/guides/telemetry-micrometer)
+- [JDBC instrumentation](https://quarkus.io/guides/datasource#datasource-tracing)
+
+### Additional Tools
+- [MapStruct](https://mapstruct.org/)
+- [JGit](https://docs.quarkiverse.io/quarkus-jgit/dev/index.html)
+- [Hibernate Validator](https://quarkus.io/guides/validation)
+
+### Testing
+- [JUnit](https://junit.org/)
+- [Mockito](https://site.mockito.org/)
+- [REST Assured](https://rest-assured.io/)
+- [AssertJ](https://assertj.github.io/doc/)
+- [DataFaker](https://www.datafaker.net/)
+
+## Architecture
+
+The application follows a layered architecture with clear separation of concerns:
+
+- **Presentation Layer** - Vaadin-based web UI with views and components
+- **REST API Layer** - RESTful endpoints for external access
+- **Service Layer** - Business logic and orchestration
+- **Repository Layer** - Data access with Panache repositories
+- **Domain Layer** - Entity models and data transfer objects
+- **Mapping Layer** - MapStruct mappers for DTO conversions
+- **Integration Layer** - External integrations (IntelliJ MCP, OpenAI)
+- **Cross-cutting Concerns** - Observability, broadcasting
+
+See [architecture.puml](images/architecture.puml) for a detailed component diagram.
+
+![architecture](images/architecture.png)
+
+### Key Components
+
+- **Event Management** - Create and manage game events
+- **Game Management** - Track games associated with events
+- **IDE Integration** - IntelliJ IDEA integration via MCP
+- **DevUI** - Development interface services
+- **Observability** - Telemetry and monitoring
+
+## Building and Running
+
+### Development Mode
+```bash
 ./mvnw quarkus:dev
 ```
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
+### Production Build
 
-## Packaging and running the application
+### Prerequisites
 
-The application can be packaged using:
-
-```shell script
-./mvnw package
+Start the PostgreSQL database using Docker Compose (or podman compose):
+```bash
+docker compose -f compose-devservices.yml up -d
 ```
 
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
+This will start a PostgreSQL 18 container with data persisted to `~/.games`.
 
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
-
-If you want to build an _über-jar_, execute the following command:
-
-```shell script
-./mvnw package -Dquarkus.package.jar.type=uber-jar
+```bash
+./mvnw clean package
 ```
 
-The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
-
-## Creating a native executable
-
-You can create a native executable using:
-
-```shell script
-./mvnw package -Dnative
+### Native Build
+```bash
+./mvnw package -Pnative
 ```
-
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using:
-
-```shell script
-./mvnw package -Dnative -Dquarkus.native.container-build=true
-```
-
-You can then execute your native executable with: `./target/leaderboard-1.0-SNAPSHOT-runner`
-
-If you want to learn more about building native executables, please consult <https://quarkus.io/guides/maven-tooling>.
-
-## Related Guides
-
-- WebSockets Next ([guide](https://quarkus.io/guides/websockets-next-reference)): Implementation of the WebSocket API with enhanced efficiency and usability
-- Hibernate Validator ([guide](https://quarkus.io/guides/validation)): Validate object properties (field, getter) and method parameters for your beans (REST, CDI, Jakarta
-  Persistence)
-- REST Jackson ([guide](https://quarkus.io/guides/rest#json-serialisation)): Jackson serialization support for Quarkus REST. This extension is not compatible with the
-  quarkus-resteasy extension, or any of the extensions that depend on it
-- Hibernate ORM with Panache ([guide](https://quarkus.io/guides/hibernate-orm-panache)): Simplify your persistence code for Hibernate ORM via the active record or the repository
-  pattern
-- JDBC Driver - PostgreSQL ([guide](https://quarkus.io/guides/datasource)): Connect to the PostgreSQL database via JDBC
