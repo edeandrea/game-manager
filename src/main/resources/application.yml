@@ -17,16 +17,15 @@ quarkus:
 #        model-name: qwen3:4b
     mcp:
       intellij:
-        transport-type: stdio
-        command: "/Users/edeandre/Applications/IntelliJ\ IDEA.app/Contents/jbr/Contents/Home/bin/java,-classpath,/Users/edeandre/Applications/IntelliJ\ IDEA.app/Contents/plugins/mcpserver/lib/mcpserver-frontend.jar:/Users/edeandre/Applications/IntelliJ\ IDEA.app/Contents/lib/util-8.jar:/Users/edeandre/Applications/IntelliJ\ IDEA.app/Contents/lib/module-intellij.libraries.ktor.client.cio.jar:/Users/edeandre/Applications/IntelliJ\ IDEA.app/Contents/lib/module-intellij.libraries.ktor.client.jar:/Users/edeandre/Applications/IntelliJ\ IDEA.app/Contents/lib/module-intellij.libraries.ktor.network.tls.jar:/Users/edeandre/Applications/IntelliJ\ IDEA.app/Contents/lib/module-intellij.libraries.ktor.io.jar:/Users/edeandre/Applications/IntelliJ\ IDEA.app/Contents/lib/module-intellij.libraries.ktor.utils.jar:/Users/edeandre/Applications/IntelliJ\ IDEA.app/Contents/lib/module-intellij.libraries.kotlinx.io.jar:/Users/edeandre/Applications/IntelliJ\ IDEA.app/Contents/lib/module-intellij.libraries.kotlinx.serialization.core.jar:/Users/edeandre/Applications/IntelliJ\ IDEA.app/Contents/lib/module-intellij.libraries.kotlinx.serialization.json.jar,com.intellij.mcpserver.stdio.McpStdioRunnerKt"
-        roots: projectDir=${game-manager.game.root-checkout-dir}
-        tool-execution-timeout: 10s
+#        transport-type: stdio
+#        command: "/Users/edeandre/Applications/IntelliJ\ IDEA.app/Contents/jbr/Contents/Home/bin/java,-classpath,/Users/edeandre/Applications/IntelliJ\ IDEA.app/Contents/plugins/mcpserver/lib/mcpserver-frontend.jar:/Users/edeandre/Applications/IntelliJ\ IDEA.app/Contents/lib/util-8.jar:/Users/edeandre/Applications/IntelliJ\ IDEA.app/Contents/lib/module-intellij.libraries.ktor.client.cio.jar:/Users/edeandre/Applications/IntelliJ\ IDEA.app/Contents/lib/module-intellij.libraries.ktor.client.jar:/Users/edeandre/Applications/IntelliJ\ IDEA.app/Contents/lib/module-intellij.libraries.ktor.network.tls.jar:/Users/edeandre/Applications/IntelliJ\ IDEA.app/Contents/lib/module-intellij.libraries.ktor.io.jar:/Users/edeandre/Applications/IntelliJ\ IDEA.app/Contents/lib/module-intellij.libraries.ktor.utils.jar:/Users/edeandre/Applications/IntelliJ\ IDEA.app/Contents/lib/module-intellij.libraries.kotlinx.io.jar:/Users/edeandre/Applications/IntelliJ\ IDEA.app/Contents/lib/module-intellij.libraries.kotlinx.serialization.core.jar:/Users/edeandre/Applications/IntelliJ\ IDEA.app/Contents/lib/module-intellij.libraries.kotlinx.serialization.json.jar,com.intellij.mcpserver.stdio.McpStdioRunnerKt"
+#        roots: projectDir=${game-manager.game.root-checkout-dir}
+#        tool-execution-timeout: 10s
         environment:
           IJ_MCP_SERVER_PORT: 64342
-    #        transport-type: http
-#        url: http://localhost:64342/sse
-#    log-requests: true
-#    log-responses: true
+          IJ_MCP_SERVER_PROJECT_PATH: ${game-manager.game.root-checkout-dir}
+        transport-type: http
+        url: http://localhost:64342/sse
   http:
     test-port: 0
     cors:
@@ -74,6 +73,15 @@ quarkus:
 
 '%dev,test':
   quarkus:
+    log:
+      category:
+        "dev.langchain4j.mcp":
+          level: DEBUG
+        "io.quarkiverse.langchain4j.mcp":
+          level: DEBUG
+    langchain4j:
+      log-requests: true
+      log-responses: true
     compose:
       devservices:
         enabled: false
