@@ -1,4 +1,4 @@
-package io.quarkus.gamemanager.game.service;
+package io.quarkus.gamemanager.game.client;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;

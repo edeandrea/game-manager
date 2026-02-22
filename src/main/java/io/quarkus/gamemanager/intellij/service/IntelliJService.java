@@ -17,9 +17,10 @@ import jakarta.ws.rs.core.Response.Status;
 
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
+import io.quarkus.gamemanager.game.client.GameDevUiClient;
 import io.quarkus.gamemanager.game.config.GameConfig;
-import io.quarkus.gamemanager.game.service.GameDevUiClient;
 import io.quarkus.gamemanager.ide.IdeService;
+import io.quarkus.gamemanager.intellij.client.IntelliJClient;
 import io.quarkus.logging.Log;
 
 import io.opentelemetry.instrumentation.annotations.SpanAttribute;
@@ -32,12 +33,14 @@ public class IntelliJService implements IdeService {
   private final GameDevUiClient gameDevUiClient;
   private final GameConfig gameConfig;
   private final IntelliJActionService intelliJActionService;
+  private final IntelliJClient intelliJClient;
   private final AtomicReference<Process> intellijProcess = new AtomicReference<>();
 
-  public IntelliJService(@RestClient GameDevUiClient gameDevUiClient, GameConfig gameConfig, IntelliJActionService intelliJActionService) {
+  public IntelliJService(@RestClient GameDevUiClient gameDevUiClient, GameConfig gameConfig, IntelliJActionService intelliJActionService, @RestClient IntelliJClient intelliJClient) {
     this.gameDevUiClient = gameDevUiClient;
     this.gameConfig = gameConfig;
     this.intelliJActionService = intelliJActionService;
+    this.intelliJClient = intelliJClient;
   }
 
   @Override
@@ -47,6 +50,10 @@ public class IntelliJService implements IdeService {
     var intellijProcess = getIntellijProcess();
 
     Log.infof("Started intellij process: %s", intellijProcess.pid());
+
+    // Need to wait for IntelliJ MCP Server to be available
+    Log.debug("Waiting for IntelliJ MCP Server to be available...");
+    this.intelliJClient.waitUntilAcceptingConnections();
 
     // Run an async process to open some files
     var unis = Stream.of(
@@ -64,6 +71,7 @@ public class IntelliJService implements IdeService {
         )
         .collect(Collectors.toCollection(ArrayList::new));
 
+    // Execute the run configuration
     unis.add(
         Uni.createFrom()
             .item(() -> this.intelliJActionService.executeRunConfiguration("booth-game", gameDir.toString()))
@@ -86,7 +94,11 @@ public class IntelliJService implements IdeService {
         .pollInterval(Duration.ofSeconds(3))
         .pollDelay(Duration.ofSeconds(2))
         .logging(log -> Log.infof("Checking to see if game is up: %s", log))
-        .until(() -> this.gameDevUiClient.health().getStatus() == Status.OK.getStatusCode());
+        .until(() -> {
+          try (var response = this.gameDevUiClient.health()) {
+            return response.getStatus() == Status.OK.getStatusCode();
+          }
+        });
 
     try {
       new ProcessBuilder("open", "%s/continuous-testing".formatted(this.gameConfig.appDevUiUrl().toString()))

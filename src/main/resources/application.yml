@@ -6,6 +6,10 @@ quarkus:
       uri: http://localhost:${game-manager.game.app-http-port}
       logging:
         scope: request-response
+    intellij:
+      uri: ${quarkus.langchain4j.mcp.intellij.url}
+      logging:
+        scope: request-response
   langchain4j:
     openai:
       api-key: ${OPENAI_API_KEY:change-me}

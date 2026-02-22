@@ -11,8 +11,8 @@ import jakarta.ws.rs.core.Response.Status;
 
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
+import io.quarkus.gamemanager.game.client.GameDevUiClient;
 import io.quarkus.gamemanager.game.config.GameConfig;
-import io.quarkus.gamemanager.game.service.GameDevUiClient;
 import io.quarkus.gamemanager.ide.IdeService;
 import io.quarkus.logging.Log;
 
