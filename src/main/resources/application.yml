@@ -1,6 +1,9 @@
 quarkus:
   application:
     name: gamemanager
+  vertx:
+    max-worker-execute-time: 5m
+    max-event-loop-execute-time: 1m
   rest-client:
     game:
       uri: http://localhost:${game-manager.game.app-http-port}
