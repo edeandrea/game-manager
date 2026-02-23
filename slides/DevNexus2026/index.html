@@ -1,159 +1,117 @@
 <!doctype html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="utf-8">
     <title>Java for AI with LangChain4j & Quarkus</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.2.1/reset.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.2.1/reveal.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.2.1/theme/black.min.css">
-    
+
     <style>
-      .reveal section img {
-        margin: 0;
-        border: none;
-        box-shadow: none;
-        max-width: 100%;
-        max-height: 100vh;
-        object-fit: contain;
-      }
+        .reveal section img {
+            margin: 0;
+            border: none;
+            box-shadow: none;
+            max-width: 100%;
+            max-height: 100vh;
+            object-fit: contain;
+        }
 
-      .reveal section iframe {
-        margin: 0 auto;
-        border: none;
-        box-shadow: none;
-        width: 100%;
-        max-height: 100vh;
-        aspect-ratio: 16 / 9;
-        display: block;
-      }
+        .reveal section iframe {
+            margin: 0 auto;
+            border: none;
+            box-shadow: none;
+            width: 100%;
+            max-height: 100vh;
+            aspect-ratio: 16 / 9;
+            display: block;
+        }
     </style>
-  </head>
-  <body>
+</head>
+<body>
     <div class="reveal">
-      <div class="slides">
-        
-        <section>
-          <img src="Slide1.png" alt="Slide 1">
-        </section>
-        
-        <section>
-          <img src="Slide2.png" alt="Slide 2">
-        </section>
-        
-        <section>
-          <img src="Slide3.png" alt="Slide 3">
-        </section>
+        <div class="slides">
+            <section data-background-image="Slide1.png" data-background-size="contain"></section>
+            <section data-background-image="Slide2.png" data-background-size="contain"></section>
+            <section data-background-image="Slide3.png" data-background-size="contain"></section>
 
-        <section data-autoslide="10000">
-          <iframe id="live" src="http://localhost:8080?event=devnexus+2026" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe>
-        </section>
-        
-        <section>
-          <img src="Slide4.png" alt="Slide 4">
-        </section>
-        
-        <section>
-          <img src="Slide5.png" alt="Slide 5">
-        </section>
-        
-        <section>
-          <img src="Slide6.png" alt="Slide 6">
-        </section>
+            <section data-autoslide="10000">
+                <iframe id="live" src="http://localhost:8080?event=devnexus+2026" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe>
+            </section>
 
-        <section data-autoslide="10000">
-          <iframe id="live" src="http://localhost:8080?event=devnexus+2026" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe>
-        </section>
-        
-        <section>
-          <img src="Slide7.png" alt="Slide 7">
-        </section>
-        
-        <section>
-          <img src="Slide8.png" alt="Slide 8">
-        </section>
+            <section data-background-image="Slide4.png" data-background-size="contain"></section>
+            <section data-background-image="Slide5.png" data-background-size="contain"></section>
+            <section data-background-image="Slide6.png" data-background-size="contain"></section>
 
-        <section>
-          <img src="Slide9.png" alt="Slide 9">
-        </section>
+            <section data-autoslide="10000">
+                <iframe id="live" src="http://localhost:8080?event=devnexus+2026" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe>
+            </section>
 
-        <section data-autoslide="10000">
-          <iframe id="live" src="http://localhost:8080?event=devnexus+2026" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe>
-        </section>
-        
-        <section>
-          <img src="Slide10.png" alt="Slide 10">
-        </section>
+            <section data-background-image="Slide7.png" data-background-size="contain"></section>
+            <section data-background-image="Slide8.png" data-background-size="contain"></section>
+            <section data-background-image="Slide9.png" data-background-size="contain"></section>
 
-        <section>
-          <img src="Slide11.png" alt="Slide 11">
-        </section>
-        
-        <section>
-          <img src="Slide12.png" alt="Slide 12">
-        </section>
+            <section data-autoslide="10000">
+                <iframe id="live" src="http://localhost:8080?event=devnexus+2026" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe>
+            </section>
 
-        <section data-autoslide="10000">
-          <iframe id="live" src="http://localhost:8080?event=devnexus+2026" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe>
-        </section>
-        
-        <section>
-          <img src="Slide13.png" alt="Slide 13">
-        </section>
-        
-        <section>
-          <img src="Slide14.png" alt="Slide 14">
-        </section>
-        
-        <section>
-          <img src="Slide15.png" alt="Slide 15">
-        </section>
+            <section data-background-image="Slide10.png" data-background-size="contain"></section>
+            <section data-background-image="Slide11.png" data-background-size="contain"></section>
+            <section data-background-image="Slide12.png" data-background-size="contain"></section>
 
-        <section data-autoslide="10000">
-          <iframe id="live" src="http://localhost:8080?event=devnexus+2026" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe>
-        </section>
+            <section data-autoslide="10000">
+                <iframe id="live" src="http://localhost:8080?event=devnexus+2026" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe>
+            </section>
 
-        <section>
-          <img src="Slide16.png" alt="Slide 16">
-        </section>
-        
-        <section>
-          <img src="Slide17.png" alt="Slide 17">
-        </section>
-        
-        <section>
-          <img src="Slide18.png" alt="Slide 18">
-        </section>
+            <section data-background-image="Slide13.png" data-background-size="contain"></section>
+            <section data-background-image="Slide14.png" data-background-size="contain"></section>
+            <section data-background-image="Slide15.png" data-background-size="contain"></section>
 
-        <section data-autoslide="10000">
-          <iframe id="live" src="http://localhost:8080?event=devnexus+2026" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe>
-        </section>
+            <section data-autoslide="10000">
+                <iframe id="live" src="http://localhost:8080?event=devnexus+2026" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe>
+            </section>
 
-      </div>
+            <section data-background-image="Slide16.png" data-background-size="contain"></section>
+            <section data-background-image="Slide17.png" data-background-size="contain"></section>
+            <section data-background-image="Slide18.png" data-background-size="contain"></section>
+
+            <section data-autoslide="10000">
+                <iframe id="live" src="http://localhost:8080?event=devnexus+2026" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe>
+            </section>
+
+        </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.2.1/reveal.min.js"></script>
     <script>
-      Reveal.initialize({
-        controls: false,
-        progress: false,
-        center: true,
-        hash: true,
-        transition: 'fade', // You can change this to 'fade', 'convex', 'concave', or 'zoom'
-        autoSlide: 5000, // 5 seconds per slide
-        autoSlideStoppable: false, // Keeps it running even if you click
-        loop: true // Loops back to slide 1 at the end
-      });
+        Reveal.initialize({
+            controls: false,
+            progress: false,
+            center: true,
+            hash: true,
+            transition: 'fade', // You can change this to 'fade', 'convex', 'concave', or 'zoom'
+            autoSlide: 5000, // 5 seconds per slide
+            autoSlideStoppable: false, // Keeps it running even if you click
+            loop: true, // Loops back to slide 1 at the end
 
-      // Reloads any slides with iframes when rendering
-      // Reveal.on('slidechanged', event => {
-      //  const iframe = document.getElementById('live');
-      //
-      //  if (iframe && event.currentSlide.contains(iframe)) {
-      //    iframe.src = iframe.src;
-      //  }
-      // });
+            // These settings force the slides to take up the full screen
+            width: "100%",
+            height: "100%",
+            margin: 0,
+            minScale: 1,
+            maxScale: 1
+        });
+
+        // Reloads any slides with iframes when rendering
+        // Reveal.on('slidechanged', event => {
+        //  const iframe = document.getElementById('live');
+        //
+        //  if (iframe && event.currentSlide.contains(iframe)) {
+        //    iframe.src = iframe.src;
+        //  }
+        // });
     </script>
-  </body>
+</body>
 </html>

@@ -60,7 +60,7 @@ public class MainLayout extends AppLayout implements BeforeEnterObserver {
               this.currentTheme = isDark ? Lumo.DARK : Lumo.LIGHT;
 
               this.switchThemeButton.setIcon(this.isDefaultDarkTheme ? VaadinIcon.SUN_O.create() : VaadinIcon.MOON_O.create());
-              this.switchThemeButton.addClickListener(e -> toggleLightDarkTheme());
+              this.switchThemeButton.addClickListener(_ -> toggleLightDarkTheme());
             }
         );
 
