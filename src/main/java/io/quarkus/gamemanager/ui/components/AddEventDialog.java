@@ -23,6 +23,9 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.binder.ValidationResult;
+import com.vaadin.flow.data.binder.Validator;
+import com.vaadin.flow.data.binder.ValueContext;
 import com.vaadin.flow.dom.Style.FlexWrap;
 
 public final class AddEventDialog extends Dialog {
@@ -87,6 +90,7 @@ public final class AddEventDialog extends Dialog {
   private void createBindings() {
     this.binder.forField(this.nameField)
         .withValidator(name -> (name!=null) && !name.isBlank(), "Event name is required")
+        .withValidator(new EventExistsValidator())
         .bind("name");
 
     this.binder.forField(this.dateField)
@@ -107,6 +111,15 @@ public final class AddEventDialog extends Dialog {
 
   public Optional<EventDto> getEvent() {
     return Optional.ofNullable(this.newEvent);
+  }
+
+  public final class EventExistsValidator implements Validator<String> {
+    @Override
+    public ValidationResult apply(String value, ValueContext context) {
+      return eventService.findEventByName(value)
+          .map(_ -> ValidationResult.error("Event '%s' already exists.".formatted(value)))
+          .orElseGet(ValidationResult::ok);
+    }
   }
 
   public static final class EventForm {

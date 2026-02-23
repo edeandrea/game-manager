@@ -31,6 +31,7 @@ public class Event {
   private LocalDate eventDate;
 
   @NotEmpty(message = "Name is required")
+  @Column(unique = true)
   private String name;
 
   @NotEmpty(message = "Description is required")

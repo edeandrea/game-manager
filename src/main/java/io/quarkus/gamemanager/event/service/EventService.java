@@ -1,6 +1,7 @@
 package io.quarkus.gamemanager.event.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
@@ -33,6 +34,13 @@ public class EventService {
   public List<EventDto> getAllEvents() {
     Log.info("Getting all events");
     return getAllEvents(EventQuery.empty());
+  }
+
+  @WithSpan("EventService.findEventByName")
+  public Optional<EventDto> findEventByName(@SpanAttribute("arg.eventName") String eventName) {
+    Log.infof("Finding event with name: %s", eventName);
+    return this.eventRepository.findByEventName(eventName)
+        .map(this.eventMapper::toDto);
   }
 
   @WithSpan("EventService.getAllEventsWithQuery")

@@ -25,6 +25,33 @@ class EventRepositoryTests {
   GameRepository gameRepository;
 
   @Test
+  void findByEventNameNotFound() {
+    var event = EventTestHelper.createEvent();
+    this.eventRepository.persistAndFlush(event);
+
+    assertThat(this.eventRepository.findByEventName(event.getName() + "notfound"))
+        .isEmpty();
+  }
+
+  @Test
+  void findByEventName() {
+    var event = EventTestHelper.createEvent();
+    this.eventRepository.persistAndFlush(event);
+
+    assertThat(this.eventRepository.findByEventName(event.getName()))
+        .hasValue(event);
+  }
+
+  @Test
+  void findByEventNameCaseInsensitive() {
+    var event = EventTestHelper.createEvent();
+    this.eventRepository.persistAndFlush(event);
+
+    assertThat(this.eventRepository.findByEventName(event.getName().toUpperCase()))
+        .hasValue(event);
+  }
+
+  @Test
   void deleteAllWithCascade() {
     this.eventRepository.deleteAllWithCascade();
     assertThat(this.eventRepository.count()).isZero();

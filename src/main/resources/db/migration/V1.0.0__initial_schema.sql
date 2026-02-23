@@ -6,7 +6,7 @@ create table if not exists events (
 		event_date date not null,
 		id bigint not null,
 		description TEXT not null,
-		name varchar(255) not null,
+		name varchar(255) not null unique,
 		primary key (id)
 );
 

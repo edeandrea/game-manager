@@ -2,6 +2,7 @@ package io.quarkus.gamemanager.event.repository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -26,6 +27,10 @@ public class EventRepository implements PanacheRepository<Event> {
         .project(Long.class)
         .list()
         .forEach(this::deleteById);
+  }
+
+  public Optional<Event> findByEventName(String eventName) {
+    return find("LOWER(name) = ?1", Optional.ofNullable(eventName).map(String::toLowerCase).orElse("")).firstResultOptional();
   }
 
   public List<Event> getEvents(EventQuery eventQuery) {

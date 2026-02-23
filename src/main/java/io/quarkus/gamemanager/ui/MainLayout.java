@@ -28,6 +28,8 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.provider.SortDirection;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.Lumo;
@@ -35,7 +37,7 @@ import com.vaadin.flow.theme.lumo.Lumo;
 @PageTitle("Event Manager")
 @Route("")
 @JsModule("./prefers-color-scheme.js")
-public class MainLayout extends AppLayout {
+public class MainLayout extends AppLayout implements BeforeEnterObserver {
   private final Button switchThemeButton = new Button(VaadinIcon.SUN_O.create());
   private final EventService eventService;
   private final GamesForEventView gamesForEventView;
@@ -181,4 +183,12 @@ public class MainLayout extends AppLayout {
     UI.getCurrent().getElement().executeJs("document.documentElement.setAttribute('theme', '" + this.currentTheme + "')");
   }
 
+  @Override
+  public void beforeEnter(BeforeEnterEvent event) {
+    event.getLocation()
+        .getQueryParameters()
+        .getSingleParameter("event")
+        .flatMap(this.eventService::findEventByName)
+        .ifPresent(this.eventSelector::setValue);
+  }
 }

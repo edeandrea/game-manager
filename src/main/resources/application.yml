@@ -38,6 +38,8 @@ quarkus:
     cors:
       enabled: true
       origins: "*"
+  undertow:
+    record-request-start-time: true
   dev-ui:
     cors:
       enabled: true
