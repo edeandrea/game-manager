@@ -45,7 +45,7 @@ public class GameService {
       "@ToolBox",
       "@OutputGuardrails",
       "@UserMessage",
-      "@RegisterAiService",
+//      "@RegisterAiService",
       "@Tool"
   );
 
