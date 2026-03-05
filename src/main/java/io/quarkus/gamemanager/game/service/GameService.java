@@ -44,9 +44,9 @@ public class GameService {
   private static final Set<String> IGNORE_LINES_CONTAINING = Set.of(
       "@ToolBox",
       "@OutputGuardrails",
-      "@UserMessage",
+      "@UserMessage"
 //      "@RegisterAiService",
-      "@Tool"
+//      "@Tool"
   );
 
   private final GameConfig gameConfig;
