@@ -10,7 +10,7 @@
 		<assertj.version>3.27.7</assertj.version>
 		<compiler-plugin.version>3.15.0</compiler-plugin.version>
 		<datafaker.version>2.5.4</datafaker.version>
-		<jgit.version>3.6.1</jgit.version>
+		<jgit.version>3.6.2</jgit.version>
 		<lineawesome.version>2.1.0</lineawesome.version>
 		<mapstruct.version>1.6.3</mapstruct.version>
 		<maven.compiler.release>25</maven.compiler.release>
